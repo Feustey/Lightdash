@@ -48,7 +48,6 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
     "encoding": "^0.1.13",
-    "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.482.0",
@@ -71,7 +70,10 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/config-array": "^0.19.2",
+    "@eslint/object-schema": "^2.1.6",
     "css-loader": "^7.1.2",
+    "eslint": "^9.22.0",
     "style-loader": "^4.0.0"
   }
 }
