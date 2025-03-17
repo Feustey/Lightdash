@@ -8,7 +8,7 @@ import {
   Activity, 
   MessageCircle, 
   Settings, 
-  Menu as MenuIcon, 
+  Menu, 
   Lightbulb, 
   Search,
   User,
@@ -220,7 +220,7 @@ export function Layout({ children }: LayoutProps) {
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="mr-4"
             >
-              <MenuIcon className="h-5 w-5" />
+              <Menu className="h-5 w-5" />
             </Button>
             
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white hidden md:block">
