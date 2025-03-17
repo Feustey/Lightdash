@@ -9,8 +9,22 @@ import { Activity, Bolt, MessageCircle, Settings, Search, Check } from "lucide-r
 import { Input } from "@/components/ui/input";
 
 interface Channel {
-  pubkey: string;
+  publicKey: string;
   alias: string;
+  capacity: number;
+  channelCount: number;
+  nodeRank: {
+    capacity: number;
+    channelCount: number;
+    age: number;
+    growth: number;
+    availability: number;
+  };
+  addresses: {
+    network: string;
+    addr: string;
+  }[];
+  color: string;
 }
 
 interface DataPoint {
@@ -19,30 +33,75 @@ interface DataPoint {
   volume: number;
 }
 
-// Simulation de données de canaux
-const mockChannels: Channel[] = [
-  { pubkey: "02abc...def", alias: "Node 1" },
-  { pubkey: "03xyz...789", alias: "Node 2" },
-  { pubkey: "02def...123", alias: "Node 3" },
-];
-
-const mockData: DataPoint[] = [
-  { name: "00:00", revenue: 400, volume: 2400 },
-  { name: "04:00", revenue: 300, volume: 1398 },
-  { name: "08:00", revenue: 200, volume: 9800 },
-  { name: "12:00", revenue: 278, volume: 3908 },
-  { name: "16:00", revenue: 189, volume: 4800 },
-  { name: "20:00", revenue: 239, volume: 3800 },
-];
+// Fonction pour récupérer les données depuis 1ml.com
+const fetchNodeData = async (pubkey: string): Promise<Channel | null> => {
+  try {
+    const response = await fetch(`https://1ml.com/node/${pubkey}/json`);
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des données');
+    }
+    const data = await response.json();
+    return {
+      publicKey: data.pub_key,
+      alias: data.alias,
+      capacity: data.capacity / 100000000, // Conversion des sats en BTC
+      channelCount: data.channelcount,
+      nodeRank: data.noderank,
+      addresses: data.addresses,
+      color: data.color
+    };
+  } catch (error) {
+    console.error('Erreur:', error);
+    return null;
+  }
+};
 
 export default function Home(): React.ReactElement {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedPubkey, setSelectedPubkey] = React.useState("");
   const [showSuggestions, setShowSuggestions] = React.useState(false);
+  const [suggestions, setSuggestions] = React.useState<Channel[]>([]);
+  const [selectedChannel, setSelectedChannel] = React.useState<Channel | null>(null);
+  const [loading, setLoading] = React.useState(false);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setShowSuggestions(true);
+  // Effet pour charger les données quand selectedPubkey change
+  React.useEffect(() => {
+    const loadChannelData = async () => {
+      if (selectedPubkey) {
+        setLoading(true);
+        const data = await fetchNodeData(selectedPubkey);
+        setSelectedChannel(data);
+        setLoading(false);
+      }
+    };
+    loadChannelData();
+  }, [selectedPubkey]);
+
+  const btcToSats = (btc: number): number => {
+    return Math.round(btc * 100000000);
+  };
+
+  const formatSats = (sats: number): string => {
+    return sats.toLocaleString('fr-FR');
+  };
+
+  const handleSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // Validation du format de la clé publique (33 caractères hexadécimaux commençant par 02 ou 03)
+    if (value.length === 33 && /^[02|03][0-9a-fA-F]{32}$/.test(value)) {
+      setLoading(true);
+      const data = await fetchNodeData(value);
+      if (data) {
+        setSuggestions([data]);
+      } else {
+        setSuggestions([]);
+      }
+      setLoading(false);
+    } else {
+      setSuggestions([]);
+    }
   };
 
   const handlePubkeySelect = (pubkey: string) => {
@@ -51,48 +110,53 @@ export default function Home(): React.ReactElement {
     setShowSuggestions(false);
   };
 
-  const filteredChannels = mockChannels.filter(
-    (channel) =>
-      channel.pubkey.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      channel.alias.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
     <Layout>
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <div className="relative w-64">
+          <div className="relative w-96">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Rechercher par clé publique..."
+              placeholder="Entrez la clé publique du nœud (33 caractères hexadécimaux)..."
               value={searchQuery}
               onChange={handleSearchChange}
-              className="pl-8"
+              className="pl-8 font-mono text-sm"
               onFocus={() => setShowSuggestions(true)}
             />
             {showSuggestions && searchQuery && (
               <div className="absolute w-full mt-1 bg-background border rounded-md shadow-lg z-50">
-                {filteredChannels.length > 0 ? (
-                  filteredChannels.map((channel) => (
+                {loading ? (
+                  <div className="px-4 py-2 text-muted-foreground">
+                    Chargement...
+                  </div>
+                ) : suggestions.length > 0 ? (
+                  suggestions.map((channel) => (
                     <div
-                      key={channel.pubkey}
-                      className="flex items-center justify-between p-2 hover:bg-muted cursor-pointer"
-                      onClick={() => handlePubkeySelect(channel.pubkey)}
+                      key={channel.publicKey}
+                      className="px-4 py-2 hover:bg-accent cursor-pointer flex items-center justify-between"
+                      onClick={() => handlePubkeySelect(channel.publicKey)}
                     >
-                      <div>
-                        <div className="font-medium">{channel.alias}</div>
-                        <div className="text-xs text-muted-foreground">{channel.pubkey}</div>
+                      <div className="flex items-center">
+                        <div 
+                          className="w-3 h-3 rounded-full mr-2" 
+                          style={{ backgroundColor: channel.color }}
+                        />
+                        <span className="font-medium">{channel.alias}</span>
                       </div>
-                      {selectedPubkey === channel.pubkey && (
-                        <Check className="h-4 w-4 text-primary" />
-                      )}
+                      <span className="text-sm text-muted-foreground font-mono">
+                        {channel.publicKey.slice(0, 8)}...{channel.publicKey.slice(-8)}
+                      </span>
                     </div>
                   ))
+                ) : searchQuery.length === 33 && !/^[02|03][0-9a-fA-F]{32}$/.test(searchQuery) ? (
+                  <div className="px-4 py-2 text-red-500">
+                    Format de clé publique invalide. Doit commencer par 02 ou 03 et contenir 33 caractères hexadécimaux.
+                  </div>
                 ) : (
-                  <div className="p-2 text-sm text-muted-foreground">
-                    Aucun canal trouvé
+                  <div className="px-4 py-2 text-muted-foreground">
+                    Aucun nœud trouvé
                   </div>
                 )}
               </div>
@@ -119,66 +183,96 @@ export default function Home(): React.ReactElement {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="p-6">
-                <h3 className="text-sm font-medium">Total Revenue (24h)</h3>
-                <div className="mt-2 text-2xl font-bold">₿ 0.00123</div>
-                <p className="text-xs text-muted-foreground">+20.1% from last 24h</p>
-              </Card>
-              <Card className="p-6">
-                <h3 className="text-sm font-medium">Channel Capacity</h3>
-                <div className="mt-2 text-2xl font-bold">₿ 1.234</div>
-                <p className="text-xs text-muted-foreground">32 active channels</p>
-              </Card>
-              <Card className="p-6">
-                <h3 className="text-sm font-medium">Forward Success Rate</h3>
-                <div className="mt-2 text-2xl font-bold">98.2%</div>
-                <p className="text-xs text-muted-foreground">Last 1000 attempts</p>
-              </Card>
-              <Card className="p-6">
-                <h3 className="text-sm font-medium">Avg Fee Rate</h3>
-                <div className="mt-2 text-2xl font-bold">324 ppm</div>
-                <p className="text-xs text-muted-foreground">Across all channels</p>
-              </Card>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card className="p-6">
-                <h3 className="text-sm font-medium mb-4">Revenue vs Volume</h3>
-                <LineChart width={500} height={300} data={mockData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
-                  <Legend />
-                  <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#8884d8" />
-                  <Line yAxisId="right" type="monotone" dataKey="volume" stroke="#82ca9d" />
-                </LineChart>
-              </Card>
-              <Card className="p-6">
-                <h3 className="text-sm font-medium mb-4">Channel Health</h3>
-                <div className="space-y-8">
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <span className="text-sm font-medium">Channel Uptime</span>
-                      <span className="ml-auto text-sm">99.9%</span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full">
-                      <div className="h-2 bg-primary rounded-full" style={{ width: "99.9%" }} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <span className="text-sm font-medium">Balanced Liquidity</span>
-                      <span className="ml-auto text-sm">76%</span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full">
-                      <div className="h-2 bg-primary rounded-full" style={{ width: "76%" }} />
-                    </div>
-                  </div>
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-muted-foreground">Chargement des données...</div>
+              </div>
+            ) : selectedChannel ? (
+              <>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <Card className="p-6">
+                    <h3 className="text-sm font-medium">Channel Capacity</h3>
+                    <div className="mt-2 text-2xl font-bold">{formatSats(btcToSats(selectedChannel.capacity))} sats</div>
+                    <p className="text-xs text-muted-foreground">{selectedChannel.channelCount} active channels</p>
+                  </Card>
+                  <Card className="p-6">
+                    <h3 className="text-sm font-medium">Node Rank</h3>
+                    <div className="mt-2 text-2xl font-bold">#{selectedChannel.nodeRank.capacity}</div>
+                    <p className="text-xs text-muted-foreground">Capacity ranking</p>
+                  </Card>
+                  <Card className="p-6">
+                    <h3 className="text-sm font-medium">Channel Count Rank</h3>
+                    <div className="mt-2 text-2xl font-bold">#{selectedChannel.nodeRank.channelCount}</div>
+                    <p className="text-xs text-muted-foreground">Among all nodes</p>
+                  </Card>
+                  <Card className="p-6">
+                    <h3 className="text-sm font-medium">Node Age</h3>
+                    <div className="mt-2 text-2xl font-bold">#{selectedChannel.nodeRank.age}</div>
+                    <p className="text-xs text-muted-foreground">Age ranking</p>
+                  </Card>
                 </div>
-              </Card>
-            </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Card className="p-6">
+                    <h3 className="text-sm font-medium mb-4">Node Information</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-medium">Addresses</h4>
+                        <ul className="mt-2 space-y-1">
+                          {selectedChannel.addresses.map((addr, index) => (
+                            <li key={index} className="text-sm text-muted-foreground">
+                              {addr.network}: {addr.addr}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium">Node Color</h4>
+                        <div className="mt-2 flex items-center">
+                          <div 
+                            className="w-4 h-4 rounded-full mr-2" 
+                            style={{ backgroundColor: selectedChannel.color }}
+                          />
+                          <span className="text-sm text-muted-foreground">{selectedChannel.color}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-6">
+                    <h3 className="text-sm font-medium mb-4">Node Rankings</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center">
+                          <span className="text-sm font-medium">Growth</span>
+                          <span className="ml-auto text-sm">#{selectedChannel.nodeRank.growth}</span>
+                        </div>
+                        <div className="h-2 bg-secondary rounded-full">
+                          <div 
+                            className="h-2 bg-primary rounded-full" 
+                            style={{ width: `${selectedChannel.nodeRank.growth / 100}%` }} 
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center">
+                          <span className="text-sm font-medium">Availability</span>
+                          <span className="ml-auto text-sm">#{selectedChannel.nodeRank.availability}</span>
+                        </div>
+                        <div className="h-2 bg-secondary rounded-full">
+                          <div 
+                            className="h-2 bg-primary rounded-full" 
+                            style={{ width: `${selectedChannel.nodeRank.availability / 100}%` }} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-muted-foreground">Sélectionnez un nœud pour voir ses informations</div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
