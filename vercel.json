@@ -1,5 +1,11 @@
 {
-  "buildCommand": "cd project && npm install && npm run build",
-  "outputDirectory": "project/.next",
-  "installCommand": "cd project && npm install"
+  "version": 2,
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://api.sparkseer.space",
+    "NEXT_PUBLIC_1ML_URL": "https://1ml.com"
+  }
 } 
