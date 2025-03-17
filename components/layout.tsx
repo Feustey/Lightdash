@@ -11,9 +11,9 @@ import {
   Menu, 
   Lightbulb, 
   Search,
-  User2,
+  User,
   Bell,
-  ArrowDown,
+  ChevronDown,
   Moon,
   Sun,
   Loader2,
@@ -298,16 +298,16 @@ export function Layout({ children }: LayoutProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center">
-                  <User2 className="mr-2 h-4 w-4" />
+                  <User className="mr-2 h-4 w-4" />
                   <span className="hidden md:inline">Lightning User</span>
-                  <ArrowDown className="ml-2 h-4 w-4" />
+                  <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <User2 className="mr-2 h-4 w-4" />
+                  <User className="mr-2 h-4 w-4" />
                   <span>Profil</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
