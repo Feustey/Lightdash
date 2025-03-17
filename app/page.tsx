@@ -80,16 +80,16 @@ export default function DashboardPage() {
           <div className="rounded-lg border bg-card p-6">
             <h3 className="text-sm font-medium text-muted-foreground">Score de flexibilité</h3>
             <p className="text-2xl font-bold">
-              {nodeData?.liquidity_flexibility_score 
-                ? (nodeData.liquidity_flexibility_score * 100).toFixed(1)
+              {nodeData?.sparkSeerStats?.liquidity_flexibility_score 
+                ? (nodeData.sparkSeerStats.liquidity_flexibility_score * 100).toFixed(1)
                 : 0}%
             </p>
           </div>
           <div className="rounded-lg border bg-card p-6">
             <h3 className="text-sm font-medium text-muted-foreground">Rang de centralité</h3>
             <p className="text-2xl font-bold">
-              {nodeData?.betweenness_rank 
-                ? nodeData.betweenness_rank.toFixed(0)
+              {nodeData?.sparkSeerStats?.betweenness_rank 
+                ? nodeData.sparkSeerStats.betweenness_rank.toFixed(0)
                 : "N/A"}
             </p>
           </div>
@@ -105,8 +105,8 @@ export default function DashboardPage() {
                   <p className="text-sm text-muted-foreground">Par canal</p>
                 </div>
                 <span className="text-sm font-medium">
-                  {nodeData?.mean_channel_capacity 
-                    ? nodeData.mean_channel_capacity.toLocaleString()
+                  {nodeData?.sparkSeerStats?.mean_channel_capacity 
+                    ? nodeData.sparkSeerStats.mean_channel_capacity.toLocaleString()
                     : "N/A"} sats
                 </span>
               </div>
@@ -116,8 +116,8 @@ export default function DashboardPage() {
                   <p className="text-sm text-muted-foreground">Sortants</p>
                 </div>
                 <span className="text-sm font-medium">
-                  {nodeData?.mean_outbound_fee_rate 
-                    ? `${nodeData.mean_outbound_fee_rate} ppm`
+                  {nodeData?.sparkSeerStats?.mean_outbound_fee_rate 
+                    ? `${nodeData.sparkSeerStats.mean_outbound_fee_rate} ppm`
                     : "N/A"}
                 </span>
               </div>
@@ -133,8 +133,8 @@ export default function DashboardPage() {
                   <p className="text-sm text-muted-foreground">Moyen</p>
                 </div>
                 <span className="text-sm font-medium">
-                  {nodeData?.htlc_response_time_mean 
-                    ? `${nodeData.htlc_response_time_mean.toFixed(2)} ms`
+                  {nodeData?.sparkSeerStats?.htlc_response_time_mean 
+                    ? `${nodeData.sparkSeerStats.htlc_response_time_mean.toFixed(2)} ms`
                     : "N/A"}
                 </span>
               </div>
@@ -144,8 +144,8 @@ export default function DashboardPage() {
                   <p className="text-sm text-muted-foreground">Sortante</p>
                 </div>
                 <span className="text-sm font-medium">
-                  {nodeData?.effective_outbound_balance 
-                    ? `${nodeData.effective_outbound_balance.toFixed(1)}%`
+                  {nodeData?.sparkSeerStats?.effective_outbound_balance 
+                    ? `${nodeData.sparkSeerStats.effective_outbound_balance.toFixed(1)}%`
                     : "N/A"}
                 </span>
               </div>
