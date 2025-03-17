@@ -1,12 +1,32 @@
 "use client";
 
+import * as React from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { Layout } from "@/components/layout";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Bolt, MessageCircle, Settings } from "lucide-react";
+import { Activity, Bolt, MessageCircle, Settings, Search, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
-const mockData = [
+interface Channel {
+  pubkey: string;
+  alias: string;
+}
+
+interface DataPoint {
+  name: string;
+  revenue: number;
+  volume: number;
+}
+
+// Simulation de données de canaux
+const mockChannels: Channel[] = [
+  { pubkey: "02abc...def", alias: "Node 1" },
+  { pubkey: "03xyz...789", alias: "Node 2" },
+  { pubkey: "02def...123", alias: "Node 3" },
+];
+
+const mockData: DataPoint[] = [
   { name: "00:00", revenue: 400, volume: 2400 },
   { name: "04:00", revenue: 300, volume: 1398 },
   { name: "08:00", revenue: 200, volume: 9800 },
@@ -15,12 +35,69 @@ const mockData = [
   { name: "20:00", revenue: 239, volume: 3800 },
 ];
 
-export default function Home() {
+export default function Home(): React.ReactElement {
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [selectedPubkey, setSelectedPubkey] = React.useState("");
+  const [showSuggestions, setShowSuggestions] = React.useState(false);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setShowSuggestions(true);
+  };
+
+  const handlePubkeySelect = (pubkey: string) => {
+    setSelectedPubkey(pubkey);
+    setSearchQuery(pubkey);
+    setShowSuggestions(false);
+  };
+
+  const filteredChannels = mockChannels.filter(
+    (channel) =>
+      channel.pubkey.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      channel.alias.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Layout>
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <div className="relative w-64">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Rechercher par clé publique..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="pl-8"
+              onFocus={() => setShowSuggestions(true)}
+            />
+            {showSuggestions && searchQuery && (
+              <div className="absolute w-full mt-1 bg-background border rounded-md shadow-lg z-50">
+                {filteredChannels.length > 0 ? (
+                  filteredChannels.map((channel) => (
+                    <div
+                      key={channel.pubkey}
+                      className="flex items-center justify-between p-2 hover:bg-muted cursor-pointer"
+                      onClick={() => handlePubkeySelect(channel.pubkey)}
+                    >
+                      <div>
+                        <div className="font-medium">{channel.alias}</div>
+                        <div className="text-xs text-muted-foreground">{channel.pubkey}</div>
+                      </div>
+                      {selectedPubkey === channel.pubkey && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-2 text-sm text-muted-foreground">
+                    Aucun canal trouvé
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
