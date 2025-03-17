@@ -50,7 +50,7 @@
     "encoding": "^0.1.13",
     "eslint-config-next": "13.5.1",
     "input-otp": "^1.2.4",
-    "lucide-react": "^0.482.0",
+    "lucide-react": "^0.263.1",
     "next": "13.5.1",
     "next-themes": "^0.3.0",
     "openai": "^4.87.3",

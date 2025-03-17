@@ -4,19 +4,20 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
-  Bolt, 
+  Zap, 
   Activity, 
   MessageCircle, 
   Settings, 
   Menu, 
   Lightbulb, 
   Search,
-  User,
+  User2,
   Bell,
-  ChevronDown,
+  ArrowDown,
   Moon,
   Sun,
-  Loader2
+  Loader2,
+  MenuSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -118,7 +119,7 @@ export function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex h-16 items-center border-b px-6">
-          <Bolt className="h-6 w-6 text-blue-600" />
+          <Zap className="h-6 w-6 text-blue-600" />
           <span className="ml-2 text-lg font-bold text-gray-900 dark:text-white">Lightning Manager</span>
         </div>
         
@@ -151,7 +152,7 @@ export function Layout({ children }: LayoutProps) {
               variant={pathname === "/channels" ? "default" : "ghost"}
               className="w-full justify-start"
             >
-              <Bolt className="mr-2 h-4 w-4" />
+              <Zap className="mr-2 h-4 w-4" />
               Canaux
             </Button>
           </Link>
@@ -297,19 +298,16 @@ export function Layout({ children }: LayoutProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center">
-                  <Avatar className="h-8 w-8 mr-2">
-                    <AvatarImage src="/avatar.png" alt="Avatar" />
-                    <AvatarFallback>LN</AvatarFallback>
-                  </Avatar>
+                  <User2 className="mr-2 h-4 w-4" />
                   <span className="hidden md:inline">Lightning User</span>
-                  <ChevronDown className="ml-2 h-4 w-4" />
+                  <ArrowDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
+                  <User2 className="mr-2 h-4 w-4" />
                   <span>Profil</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
