@@ -1,57 +1,130 @@
-# Lightdash - Dashboard Lightning Network
+# Lightdash
 
-Un dashboard moderne pour visualiser les informations des nœuds Lightning Network, utilisant les données de 1ML.com.
+[![CI](https://github.com/Feustey/Lightdash/actions/workflows/ci.yml/badge.svg)](https://github.com/Feustey/Lightdash/actions/workflows/ci.yml)
+[![Deploy](https://github.com/Feustey/Lightdash/actions/workflows/deploy.yml/badge.svg)](https://github.com/Feustey/Lightdash/actions/workflows/deploy.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Rust](https://img.shields.io/badge/Rust-1.70%2B-orange.svg)](https://www.rust-lang.org)
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-black.svg)](https://vercel.com)
 
-## Fonctionnalités
+Lightdash est une interface web moderne pour gérer votre nœud Lightning Bitcoin. Elle offre une expérience utilisateur intuitive pour surveiller et gérer vos canaux de paiement, transactions et informations du nœud.
 
-- Recherche de nœuds par clé publique
-- Affichage des informations détaillées du nœud :
-  - Capacité des canaux
-  - Classement du nœud
-  - Nombre de canaux actifs
-  - Âge du nœud
-  - Adresses du nœud
-  - Statistiques de croissance et disponibilité
+## 🌟 Fonctionnalités
 
-## Technologies utilisées
+- **Tableau de bord interactif**
+  - Statistiques en temps réel du nœud
+  - Visualisation des canaux de paiement
+  - Graphiques de transactions
+  - Thème sombre/clair
 
-- Next.js 13
-- TypeScript
-- Tailwind CSS
-- Recharts
-- Lucide Icons
+- **Gestion des canaux**
+  - Création de nouveaux canaux
+  - Fermeture de canaux existants
+  - Visualisation des balances
+  - État des canaux en temps réel
 
-## Installation
+- **Gestion des transactions**
+  - Historique complet des transactions
+  - Envoi de paiements
+  - Création d'invoices
+  - Filtres et recherche
 
-1. Clonez le dépôt :
+## 🚀 Installation
+
+### Prérequis
+
+- Rust 1.70 ou supérieur
+- Un nœud Lightning (LND, c-lightning, etc.)
+- Vercel CLI (pour le déploiement)
+
+### Configuration locale
+
+1. Cloner le repository :
 ```bash
-git clone [URL_DU_REPO]
-cd Lightdash
+git clone https://github.com/votre-username/lightdash.git
+cd lightdash
 ```
 
-2. Installez les dépendances :
-```bash
-cd project
-npm install
+2. Créer un fichier `.env` :
+```env
+LIGHTNING_URL=http://votre-nœud-lightning:8080
+RUST_LOG=info
 ```
 
-3. Lancez le serveur de développement :
+3. Compiler et exécuter :
 ```bash
-npm run dev
+cargo build --release
+cargo run
 ```
 
-4. Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
+### Déploiement sur Vercel
 
-## Utilisation
+1. Installer Vercel CLI :
+```bash
+npm install -g vercel
+```
 
-1. Entrez la clé publique d'un nœud Lightning Network dans le champ de recherche
-2. Les informations du nœud s'afficheront automatiquement
-3. Explorez les différentes sections du dashboard pour plus de détails
+2. Se connecter à Vercel :
+```bash
+vercel login
+```
 
-## Contribution
+3. Configurer les variables d'environnement :
+```bash
+vercel env add LIGHTNING_URL
+vercel env add LIGHTNING_MACAROON
+vercel env add LIGHTNING_CERT
+vercel env add RUST_LOG
+```
 
-Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou à soumettre une pull request.
+4. Déployer :
+```bash
+vercel --prod
+```
 
-## Licence
+## 🔧 Configuration
 
-MIT
+### Variables d'environnement
+
+| Variable | Description | Requis |
+|----------|-------------|---------|
+| `LIGHTNING_URL` | URL de votre nœud Lightning | Oui |
+| `LIGHTNING_MACAROON` | Macaroon d'authentification | Oui |
+| `LIGHTNING_CERT` | Certificat TLS | Oui |
+| `RUST_LOG` | Niveau de log (info, debug, etc.) | Non |
+
+### Sécurité
+
+- Ne partagez jamais vos macaroons ou certificats
+- Utilisez HTTPS en production
+- Limitez les origines CORS selon vos besoins
+
+## 📚 Documentation API
+
+### Endpoints
+
+- `GET /api/node/info` - Informations du nœud
+- `GET /api/channels` - Liste des canaux
+- `GET /api/transactions` - Historique des transactions
+- `POST /api/payments` - Envoyer un paiement
+- `POST /api/invoices` - Créer une invoice
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! N'hésitez pas à :
+
+1. Fork le projet
+2. Créer une branche (`git checkout -b feature/AmazingFeature`)
+3. Commit vos changements (`git commit -m 'Add some AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrir une Pull Request
+
+## 📝 Licence
+
+Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+## 🙏 Remerciements
+
+- [Lightning Network](https://lightning.network/)
+- [Vercel](https://vercel.com/)
+- [Rust](https://www.rust-lang.org/)
+- [Chart.js](https://www.chartjs.org/) 
