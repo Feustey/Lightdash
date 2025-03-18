@@ -1,5 +1,11 @@
 # Lightdash
 
+[![CI](https://github.com/Feustey/Lightdash/actions/workflows/ci.yml/badge.svg)](https://github.com/Feustey/Lightdash/actions/workflows/ci.yml)
+[![Deploy](https://github.com/Feustey/Lightdash/actions/workflows/deploy.yml/badge.svg)](https://github.com/Feustey/Lightdash/actions/workflows/deploy.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Rust](https://img.shields.io/badge/Rust-1.70%2B-orange.svg)](https://www.rust-lang.org)
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-black.svg)](https://vercel.com)
+
 Lightdash est une interface web moderne pour gérer votre nœud Lightning Bitcoin. Elle offre une expérience utilisateur intuitive pour surveiller et gérer vos canaux de paiement, transactions et informations du nœud.
 
 ## 🌟 Fonctionnalités
