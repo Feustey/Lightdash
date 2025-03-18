@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - Lightdash{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Bienvenue sur Lightdash</h1>
+    <p class="text-gray-600 dark:text-gray-300">
+        Votre tableau de bord Lightning Network en Rust.
+    </p>
+</div>
+
+<div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <!-- Carte des statistiques -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Statistiques du nœud</h2>
+        <div class="space-y-4">
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Capacité totale</p>
+                <p id="total-capacity" class="text-2xl font-semibold text-gray-900 dark:text-white">-</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Nombre de canaux</p>
+                <p id="channel-count" class="text-2xl font-semibold text-gray-900 dark:text-white">-</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Version du nœud</p>
+                <p id="node-version" class="text-2xl font-semibold text-gray-900 dark:text-white">-</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carte des canaux -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">État des canaux</h2>
+        <div class="space-y-4">
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Canaux actifs</p>
+                <p id="active-channels" class="text-2xl font-semibold text-gray-900 dark:text-white">-</p>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                <div id="active-channels-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carte des transactions -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Transactions récentes</h2>
+        <div id="recent-transactions" class="space-y-2">
+            <p class="text-gray-600 dark:text-gray-300">Chargement...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Graphique des transactions -->
+<div class="mt-6">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Historique des transactions</h2>
+        <div class="chart-container">
+            <canvas id="transactions-chart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/app.js"></script>
+{% endblock %} 

@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { type ReactNode, type ChangeEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
-  Zap, 
-  Activity, 
   MessageCircle, 
   Settings, 
   Menu, 
@@ -16,8 +15,7 @@ import {
   ChevronDown,
   Moon,
   Sun,
-  Loader2,
-  MenuSquare
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -34,9 +32,14 @@ import {
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { fetchNodeData, fetchDefaultNodeData } from "@/app/utils/sparkseer";
+import { Icons } from './icons';
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 interface SearchResult {
@@ -67,7 +70,7 @@ export function Layout({ children }: LayoutProps) {
     loadDefaultNode();
   }, []);
 
-  const handleSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
     setOpen(true);
@@ -119,7 +122,7 @@ export function Layout({ children }: LayoutProps) {
         )}
       >
         <div className="flex h-16 items-center border-b px-6">
-          <Zap className="h-6 w-6 text-blue-600" />
+          <Icons.zap className="h-5 w-5" />
           <span className="ml-2 text-lg font-bold text-gray-900 dark:text-white">Lightning Manager</span>
         </div>
         
@@ -130,7 +133,7 @@ export function Layout({ children }: LayoutProps) {
               placeholder="Rechercher..."
               className="pl-10 bg-gray-100 dark:bg-gray-700 border-0"
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Icons.search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           </div>
         </div>
         
@@ -143,7 +146,7 @@ export function Layout({ children }: LayoutProps) {
               variant={pathname === "/" ? "default" : "ghost"}
               className="w-full justify-start"
             >
-              <Activity className="mr-2 h-4 w-4" />
+              <Icons.activity className="mr-2 h-5 w-5" />
               Tableau de bord
             </Button>
           </Link>
@@ -152,7 +155,7 @@ export function Layout({ children }: LayoutProps) {
               variant={pathname === "/channels" ? "default" : "ghost"}
               className="w-full justify-start"
             >
-              <Zap className="mr-2 h-4 w-4" />
+              <Icons.zap className="mr-2 h-5 w-5" />
               Canaux
             </Button>
           </Link>
@@ -161,7 +164,7 @@ export function Layout({ children }: LayoutProps) {
               variant={pathname === "/actions" ? "default" : "ghost"}
               className="w-full justify-start"
             >
-              <Lightbulb className="mr-2 h-4 w-4" />
+              <Icons.lightbulb className="mr-2 h-5 w-5" />
               Actions
             </Button>
           </Link>
@@ -174,7 +177,7 @@ export function Layout({ children }: LayoutProps) {
               variant={pathname === "/messages" ? "default" : "ghost"}
               className="w-full justify-start"
             >
-              <MessageCircle className="mr-2 h-4 w-4" />
+              <Icons.message className="mr-2 h-5 w-5" />
               Messages
             </Button>
           </Link>
@@ -187,7 +190,7 @@ export function Layout({ children }: LayoutProps) {
               variant={pathname === "/settings" ? "default" : "ghost"}
               className="w-full justify-start"
             >
-              <Settings className="mr-2 h-4 w-4" />
+              <Icons.settings className="mr-2 h-5 w-5" />
               Paramètres
             </Button>
           </Link>
@@ -221,7 +224,7 @@ export function Layout({ children }: LayoutProps) {
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="mr-4"
             >
-              <Menu className="h-5 w-5" />
+              <Icons.menu className="h-5 w-5" />
             </Button>
             
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white hidden md:block">
@@ -243,7 +246,7 @@ export function Layout({ children }: LayoutProps) {
                   className="w-[300px] justify-between"
                 >
                   {searchQuery || "Rechercher un nœud..."}
-                  <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  <Icons.search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[300px] p-0">
@@ -257,7 +260,7 @@ export function Layout({ children }: LayoutProps) {
                     <CommandEmpty>
                       {isSearching ? (
                         <div className="flex items-center justify-center py-6">
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Icons.loader className="h-5 w-5 animate-spin" />
                         </div>
                       ) : (
                         "Aucun nœud trouvé."
@@ -284,34 +287,34 @@ export function Layout({ children }: LayoutProps) {
             
             <Button variant="ghost" size="icon" onClick={toggleTheme}>
               {theme === "light" ? (
-                <Moon className="h-5 w-5" />
+                <Icons.moon className="h-5 w-5" />
               ) : (
-                <Sun className="h-5 w-5" />
+                <Icons.sun className="h-5 w-5" />
               )}
             </Button>
             
             <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
+              <Icons.bell className="h-5 w-5" />
               <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
             </Button>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center">
-                  <User className="mr-2 h-4 w-4" />
+                  <Icons.user className="mr-2 h-5 w-5" />
                   <span className="hidden md:inline">Lightning User</span>
-                  <ChevronDown className="ml-2 h-4 w-4" />
+                  <Icons.chevronDown className="ml-2 h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
+                  <Icons.user className="mr-2 h-5 w-5" />
                   <span>Profil</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
+                  <Icons.settings className="mr-2 h-5 w-5" />
                   <span>Paramètres</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

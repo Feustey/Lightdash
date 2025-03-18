@@ -1,0 +1,51 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "api/*.rs",
+            "use": "@vercel/rust",
+            "config": {
+                "buildCommand": "cargo build --release",
+                "outputDirectory": "target/release",
+                "installCommand": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
+                "buildEnvironment": {
+                    "RUSTUP_HOME": "/tmp/rustup",
+                    "CARGO_HOME": "/tmp/cargo"
+                }
+            }
+        },
+        {
+            "src": "static/**",
+            "use": "@vercel/static"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/api/$1",
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Grpc-Metadata-macaroon"
+            }
+        },
+        {
+            "src": "/static/(.*)",
+            "dest": "/static/$1",
+            "headers": {
+                "Access-Control-Allow-Origin": "*"
+            }
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/api/index.rs",
+            "headers": {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+    ],
+    "env": {
+        "NODE_ENV": "production",
+        "PORT": "8080"
+    }
+} 

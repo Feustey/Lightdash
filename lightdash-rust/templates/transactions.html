@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions - Lightdash{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
+        <div class="flex space-x-4">
+            <button class="btn btn-primary" onclick="ui.openSendPaymentModal()">
+                Envoyer
+            </button>
+            <button class="btn btn-secondary" onclick="ui.openReceivePaymentModal()">
+                Recevoir
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="mb-6 flex space-x-4">
+        <div class="form-group">
+            <label for="type-filter" class="form-label">Type</label>
+            <select id="type-filter" class="form-input" onchange="ui.filterTransactions()">
+                <option value="all">Tous</option>
+                <option value="send">Envoi</option>
+                <option value="receive">Réception</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="date-filter" class="form-label">Période</label>
+            <select id="date-filter" class="form-input" onchange="ui.filterTransactions()">
+                <option value="all">Tout</option>
+                <option value="today">Aujourd'hui</option>
+                <option value="week">Cette semaine</option>
+                <option value="month">Ce mois</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Graphique -->
+    <div class="mb-6">
+        <div class="chart-container">
+            <canvas id="transactions-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Liste des transactions -->
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Montant</th>
+                    <th>Description</th>
+                    <th>État</th>
+                </tr>
+            </thead>
+            <tbody id="transactions-table">
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-gray-500 dark:text-gray-400">
+                        Chargement des transactions...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal pour envoyer un paiement -->
+<div id="send-payment-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Envoyer un paiement</h2>
+                <form id="send-payment-form" class="space-y-4">
+                    <div class="form-group">
+                        <label for="payment-request" class="form-label">Facture Lightning</label>
+                        <input type="text" id="payment-request" class="form-input" required>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" class="btn btn-secondary" onclick="ui.closeSendPaymentModal()">
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Envoyer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour recevoir un paiement -->
+<div id="receive-payment-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Recevoir un paiement</h2>
+                <form id="receive-payment-form" class="space-y-4">
+                    <div class="form-group">
+                        <label for="amount" class="form-label">Montant (sats)</label>
+                        <input type="number" id="amount" class="form-input" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" id="description" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="expiry" class="form-label">Expiration (heures)</label>
+                        <input type="number" id="expiry" class="form-input" value="24" min="1" max="168">
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" class="btn btn-secondary" onclick="ui.closeReceivePaymentModal()">
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Générer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/app.js"></script>
+<script>
+    // Fonctions spécifiques à la page des transactions
+    const ui = {
+        ...window.ui,
+
+        openSendPaymentModal() {
+            document.getElementById('send-payment-modal').classList.remove('hidden');
+        },
+
+        closeSendPaymentModal() {
+            document.getElementById('send-payment-modal').classList.add('hidden');
+        },
+
+        openReceivePaymentModal() {
+            document.getElementById('receive-payment-modal').classList.remove('hidden');
+        },
+
+        closeReceivePaymentModal() {
+            document.getElementById('receive-payment-modal').classList.add('hidden');
+        },
+
+        async updateTransactionsTable() {
+            try {
+                const transactions = await api.getTransactions();
+                const tbody = document.getElementById('transactions-table');
+                
+                tbody.innerHTML = transactions.map(tx => `
+                    <tr>
+                        <td>${utils.formatDate(tx.timestamp)}</td>
+                        <td>
+                            <span class="badge badge-${tx.type_ === 'send' ? 'error' : 'success'}">
+                                ${tx.type_ === 'send' ? 'Envoi' : 'Réception'}
+                            </span>
+                        </td>
+                        <td>${utils.formatSats(tx.amount)}</td>
+                        <td>${tx.description || '-'}</td>
+                        <td>
+                            <span class="badge badge-${tx.status === 'completed' ? 'success' : 'warning'}">
+                                ${tx.status === 'completed' ? 'Complété' : 'En attente'}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+
+                charts.updateTransactionsChart(transactions);
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour du tableau des transactions:', error);
+            }
+        },
+
+        filterTransactions() {
+            const type = document.getElementById('type-filter').value;
+            const period = document.getElementById('date-filter').value;
+            
+            // Implémentation du filtrage à venir
+            console.log('Filtrage par:', { type, period });
+        }
+    };
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', () => {
+        charts.initTransactionsChart();
+        ui.updateTransactionsTable();
+        setInterval(() => ui.updateTransactionsTable(), 30000);
+
+        // Gestion du formulaire d'envoi de paiement
+        document.getElementById('send-payment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const paymentRequest = document.getElementById('payment-request').value;
+
+            try {
+                await api.sendPayment(paymentRequest);
+                utils.showNotification('Paiement envoyé avec succès', 'success');
+                ui.closeSendPaymentModal();
+                ui.updateTransactionsTable();
+            } catch (error) {
+                utils.showNotification('Erreur lors de l\'envoi du paiement', 'error');
+            }
+        });
+
+        // Gestion du formulaire de réception de paiement
+        document.getElementById('receive-payment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = parseInt(document.getElementById('amount').value);
+            const description = document.getElementById('description').value;
+            const expiry = parseInt(document.getElementById('expiry').value);
+
+            try {
+                const invoice = await api.createInvoice(amount, description, expiry);
+                utils.showNotification('Facture générée avec succès', 'success');
+                ui.closeReceivePaymentModal();
+                // Afficher la facture dans un modal ou la copier dans le presse-papier
+                console.log('Facture:', invoice);
+            } catch (error) {
+                utils.showNotification('Erreur lors de la génération de la facture', 'error');
+            }
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Canaux - Lightdash{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/styles.css">
+{% endblock %}
+
+{% block content %}
+<div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Canaux Lightning</h1>
+        <button class="btn btn-primary" onclick="ui.openNewChannelModal()">
+            Nouveau canal
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nœud distant</th>
+                    <th>Capacité</th>
+                    <th>Balance locale</th>
+                    <th>État</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="channels-table">
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-gray-500 dark:text-gray-400">
+                        Chargement des canaux...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal pour créer un nouveau canal -->
+<div id="new-channel-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Créer un nouveau canal</h2>
+                <form id="new-channel-form" class="space-y-4">
+                    <div class="form-group">
+                        <label for="peer-pubkey" class="form-label">Clé publique du nœud</label>
+                        <input type="text" id="peer-pubkey" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="capacity" class="form-label">Capacité (sats)</label>
+                        <input type="number" id="capacity" class="form-input" required min="100000">
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" class="btn btn-secondary" onclick="ui.closeNewChannelModal()">
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Créer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/app.js"></script>
+<script>
+    // Fonctions spécifiques à la page des canaux
+    const ui = {
+        ...window.ui,
+        
+        openNewChannelModal() {
+            document.getElementById('new-channel-modal').classList.remove('hidden');
+        },
+
+        closeNewChannelModal() {
+            document.getElementById('new-channel-modal').classList.add('hidden');
+        },
+
+        async updateChannelsTable() {
+            try {
+                const channels = await api.getChannels();
+                const tbody = document.getElementById('channels-table');
+                
+                tbody.innerHTML = channels.map(channel => `
+                    <tr>
+                        <td class="font-mono text-sm">${channel.channel_id}</td>
+                        <td class="font-mono text-sm">${channel.remote_pubkey}</td>
+                        <td>${utils.formatSats(channel.capacity)}</td>
+                        <td>${utils.formatSats(channel.local_balance)}</td>
+                        <td>
+                            <span class="badge badge-${channel.active ? 'success' : 'error'}">
+                                ${channel.active ? 'Actif' : 'Inactif'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm" onclick="ui.closeChannel('${channel.channel_id}')">
+                                Fermer
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour du tableau des canaux:', error);
+            }
+        },
+
+        async closeChannel(channelId) {
+            if (!confirm('Êtes-vous sûr de vouloir fermer ce canal ?')) return;
+            
+            try {
+                await api.closeChannel(channelId);
+                utils.showNotification('Canal fermé avec succès', 'success');
+                this.updateChannelsTable();
+            } catch (error) {
+                utils.showNotification('Erreur lors de la fermeture du canal', 'error');
+            }
+        }
+    };
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', () => {
+        ui.updateChannelsTable();
+        setInterval(() => ui.updateChannelsTable(), 30000);
+
+        // Gestion du formulaire de création de canal
+        document.getElementById('new-channel-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pubkey = document.getElementById('peer-pubkey').value;
+            const capacity = parseInt(document.getElementById('capacity').value);
+
+            try {
+                await api.openChannel(pubkey, capacity);
+                utils.showNotification('Canal créé avec succès', 'success');
+                ui.closeNewChannelModal();
+                ui.updateChannelsTable();
+            } catch (error) {
+                utils.showNotification('Erreur lors de la création du canal', 'error');
+            }
+        });
+    });
+</script>
+{% endblock %} 
