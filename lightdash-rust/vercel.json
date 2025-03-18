@@ -3,15 +3,10 @@
     "builds": [
         {
             "src": "api/*.rs",
-            "use": "@vercel/rust",
+            "use": "vercel-rust",
             "config": {
                 "buildCommand": "cargo build --release",
-                "outputDirectory": "target/release",
-                "installCommand": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
-                "buildEnvironment": {
-                    "RUSTUP_HOME": "/tmp/rustup",
-                    "CARGO_HOME": "/tmp/cargo"
-                }
+                "outputDirectory": "target/release"
             }
         },
         {
