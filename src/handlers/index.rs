@@ -16,7 +16,7 @@ pub async fn index(tmpl: web::Data<Tera>) -> impl Responder {
     }
     info!("Fichier template trouvé: {:?}", template_path);
 
-    let mut ctx = tera::Context::new();
+    let ctx = tera::Context::new();
     
     match tmpl.render("index.html", &ctx) {
         Ok(html) => {
@@ -37,7 +37,7 @@ pub async fn index(tmpl: web::Data<Tera>) -> impl Responder {
 
 pub async fn channels(tmpl: web::Data<Tera>) -> impl Responder {
     info!("Rendu de la page des canaux");
-    let mut ctx = tera::Context::new();
+    let ctx = tera::Context::new();
     
     match tmpl.render("channels.html", &ctx) {
         Ok(html) => {
@@ -57,7 +57,7 @@ pub async fn channels(tmpl: web::Data<Tera>) -> impl Responder {
 
 pub async fn transactions(tmpl: web::Data<Tera>) -> impl Responder {
     info!("Rendu de la page des transactions");
-    let mut ctx = tera::Context::new();
+    let ctx = tera::Context::new();
     
     match tmpl.render("transactions.html", &ctx) {
         Ok(html) => {

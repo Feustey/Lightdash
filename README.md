@@ -1,4 +1,4 @@
-# Lightdash
+# Lightdash - Interface de Gestion de Nœud Lightning
 
 [![CI](https://github.com/Feustey/Lightdash/actions/workflows/ci.yml/badge.svg)](https://github.com/Feustey/Lightdash/actions/workflows/ci.yml)
 [![Deploy](https://github.com/Feustey/Lightdash/actions/workflows/deploy.yml/badge.svg)](https://github.com/Feustey/Lightdash/actions/workflows/deploy.yml)
@@ -6,107 +6,105 @@
 [![Rust](https://img.shields.io/badge/Rust-1.70%2B-orange.svg)](https://www.rust-lang.org)
 [![Vercel](https://img.shields.io/badge/Vercel-Deployed-black.svg)](https://vercel.com)
 
-Lightdash est une interface web moderne pour gérer votre nœud Lightning Bitcoin. Elle offre une expérience utilisateur intuitive pour surveiller et gérer vos canaux de paiement, transactions et informations du nœud.
+Lightdash est une application web moderne développée en Rust qui permet de gérer et surveiller votre nœud Lightning Network. L'application utilise le framework Actix-web pour offrir une interface rapide et fiable.
 
-## 🌟 Fonctionnalités
+## Fonctionnalités
 
-- **Tableau de bord interactif**
-  - Statistiques en temps réel du nœud
-  - Visualisation des canaux de paiement
-  - Graphiques de transactions
-  - Thème sombre/clair
+- 🔍 Consultation des informations du nœud
+- 💰 Gestion des canaux Lightning
+- 📊 Suivi des transactions
+- 📈 Statistiques du réseau Lightning
+- 🌐 Intégration avec Sparkseer et 1ML pour des données enrichies
 
-- **Gestion des canaux**
-  - Création de nouveaux canaux
-  - Fermeture de canaux existants
-  - Visualisation des balances
-  - État des canaux en temps réel
-
-- **Gestion des transactions**
-  - Historique complet des transactions
-  - Envoi de paiements
-  - Création d'invoices
-  - Filtres et recherche
-
-## 🚀 Installation
-
-### Prérequis
+## Prérequis
 
 - Rust 1.70 ou supérieur
-- Un nœud Lightning (LND, c-lightning, etc.)
-- Vercel CLI (pour le déploiement)
+- Un nœud Lightning Network (compatible avec l'API REST LND)
+- Accès à Internet pour les API externes (Sparkseer, 1ML)
 
-### Configuration locale
+## Installation
 
-1. Cloner le repository :
+1. Clonez le dépôt :
 ```bash
 git clone https://github.com/votre-username/lightdash.git
 cd lightdash
 ```
 
-2. Créer un fichier `.env` :
+2. Créez un fichier `.env` à la racine du projet :
 ```env
-LIGHTNING_URL=http://votre-nœud-lightning:8080
-RUST_LOG=info
+PORT=3000
+HOST=127.0.0.1
+LIGHTNING_URL=http://votre-noeud:port
+NEXT_PUBLIC_API_URL=https://api.sparkseer.space
+NEXT_PUBLIC_1ML_URL=https://1ml.com
 ```
 
-3. Compiler et exécuter :
+3. Compilez et lancez l'application :
 ```bash
-cargo build --release
-cargo run
+cargo run --bin lightdash_rust
 ```
 
-### Déploiement sur Vercel
+## Architecture
 
-1. Installer Vercel CLI :
-```bash
-npm install -g vercel
-```
+L'application est structurée en plusieurs modules :
+- `handlers/` : Gestionnaires de routes HTTP
+- `models/` : Structures de données
+- `services/` : Logique métier et intégrations externes
 
-2. Se connecter à Vercel :
-```bash
-vercel login
-```
+## API Endpoints
 
-3. Configurer les variables d'environnement :
-```bash
-vercel env add LIGHTNING_URL
-vercel env add LIGHTNING_MACAROON
-vercel env add LIGHTNING_CERT
-vercel env add RUST_LOG
-```
+- `GET /api/node/info` : Informations sur le nœud
+- `GET /api/channels` : Liste des canaux
+- `GET /api/transactions` : Historique des transactions
+- `GET /api/network/stats` : Statistiques du réseau
 
-4. Déployer :
-```bash
-vercel --prod
-```
+## Recommandations d'Optimisations (IA)
 
-## 🔧 Configuration
+1. **Performance**
+   - Implémenter un système de cache pour les requêtes externes (Sparkseer, 1ML)
+   - Utiliser des connexions persistantes avec le nœud Lightning
+   - Ajouter des métriques de performance avec Prometheus
 
-### Variables d'environnement
+2. **Sécurité**
+   - Ajouter une authentification JWT
+   - Implémenter une limitation de taux (rate limiting)
+   - Valider toutes les entrées utilisateur
 
-| Variable | Description | Requis |
-|----------|-------------|---------|
-| `LIGHTNING_URL` | URL de votre nœud Lightning | Oui |
-| `LIGHTNING_MACAROON` | Macaroon d'authentification | Oui |
-| `LIGHTNING_CERT` | Certificat TLS | Oui |
-| `RUST_LOG` | Niveau de log (info, debug, etc.) | Non |
+3. **Architecture**
+   - Migrer vers une architecture microservices
+   - Utiliser gRPC pour les communications internes
+   - Implémenter un système de file d'attente pour les opérations asynchrones
 
-### Sécurité
+4. **Tests**
+   - Ajouter des tests unitaires
+   - Implémenter des tests d'intégration
+   - Mettre en place des tests de charge
 
-- Ne partagez jamais vos macaroons ou certificats
-- Utilisez HTTPS en production
-- Limitez les origines CORS selon vos besoins
+5. **Monitoring**
+   - Intégrer OpenTelemetry pour le tracing
+   - Ajouter des alertes sur les métriques clés
+   - Implémenter un système de logging structuré
 
-## 📚 Documentation API
+6. **Interface Utilisateur**
+   - Développer une interface utilisateur en WebAssembly
+   - Ajouter des graphiques interactifs
+   - Implémenter des notifications en temps réel
 
-### Endpoints
+7. **Déploiement**
+   - Conteneuriser l'application avec Docker
+   - Mettre en place un pipeline CI/CD
+   - Automatiser les déploiements avec Kubernetes
 
-- `GET /api/node/info` - Informations du nœud
-- `GET /api/channels` - Liste des canaux
-- `GET /api/transactions` - Historique des transactions
-- `POST /api/payments` - Envoyer un paiement
-- `POST /api/invoices` - Créer une invoice
+## Contribution
+
+Les contributions sont les bienvenues ! N'hésitez pas à :
+1. Fork le projet
+2. Créer une branche pour votre fonctionnalité
+3. Soumettre une Pull Request
+
+## Licence
+
+MIT License - Voir le fichier LICENSE pour plus de détails.
 
 ## 🤝 Contribution
 

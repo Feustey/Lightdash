@@ -1,81 +1,100 @@
-use lambda_http::{handler, lambda_runtime::{self, Context}, IntoResponse, Request, Response};
-use serde_json::json;
+use lambda_http::{run, service_fn, Body, Error, Request, Response};
+use lambda_runtime::Context;
+use serde_json::{json, Value};
 use reqwest::Client;
 use std::env;
 
 #[tokio::main]
-async fn main() -> Result<(), lambda_runtime::Error> {
-    lambda_runtime::run(handler(func)).await?;
-    Ok(())
+async fn main() -> Result<(), Error> {
+    run(service_fn(func)).await
 }
 
-async fn func(event: Request, _: Context) -> Result<impl IntoResponse, lambda_runtime::Error> {
+async fn func(event: Request, _: Context) -> Result<Response<Body>, Error> {
     // Vérification des variables d'environnement requises
     let lightning_url = env::var("LIGHTNING_URL")
-        .unwrap_or_else(|_| "http://localhost:8080".to_string());
+        .map_err(|_| "LIGHTNING_URL non définie")?;
     
     let macaroon = env::var("LIGHTNING_MACAROON")
-        .unwrap_or_default();
+        .map_err(|_| "LIGHTNING_MACAROON non définie")?;
     
     let cert = env::var("LIGHTNING_CERT")
-        .unwrap_or_default();
+        .map_err(|_| "LIGHTNING_CERT non définie")?;
 
-    // Configuration du client avec les certificats et le macaroon
-    let client = Client::builder()
-        .danger_accept_invalid_certs(true) // À utiliser uniquement en développement
-        .build()
-        .unwrap();
-
+    // Extraction du chemin de la requête
     let path = event.uri().path();
-    let response = match path {
+    
+    // Routage des requêtes
+    match path {
         "/api/node/info" => {
-            client.get(format!("{}/v1/getinfo", lightning_url))
-                .header("Grpc-Metadata-macaroon", &macaroon)
+            let client = Client::new();
+            let response = client
+                .get(format!("{}/v1/getinfo", lightning_url))
+                .header("Grpc-Metadata-macaroon", macaroon)
                 .send()
                 .await
-        },
-        "/api/channels" => {
-            client.get(format!("{}/v1/channels", lightning_url))
-                .header("Grpc-Metadata-macaroon", &macaroon)
-                .send()
-                .await
-        },
-        "/api/transactions" => {
-            client.get(format!("{}/v1/payments", lightning_url))
-                .header("Grpc-Metadata-macaroon", &macaroon)
-                .send()
-                .await
-        },
-        _ => {
-            return Ok(Response::builder()
-                .status(404)
-                .header("content-type", "application/json")
-                .body(json!({"error": "Route non trouvée"}).to_string())
-                .expect("failed to render error"))
-        }
-    };
+                .map_err(|e| format!("Erreur de requête: {}", e))?;
 
-    match response {
-        Ok(res) => {
-            let status = res.status();
-            let body = res.text().await.unwrap_or_else(|_| "{}".to_string());
-            
+            let status = response.status();
+            let body = response
+                .text()
+                .await
+                .map_err(|e| format!("Erreur de lecture: {}", e))?;
+
             Ok(Response::builder()
                 .status(status)
                 .header("content-type", "application/json")
                 .header("Access-Control-Allow-Origin", "*")
-                .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                .header("Access-Control-Allow-Headers", "Content-Type, Grpc-Metadata-macaroon")
-                .body(body)
+                .body(Body::from(body))
                 .expect("failed to render response"))
-        },
-        Err(e) => {
+        }
+        "/api/channels" => {
+            let client = Client::new();
+            let response = client
+                .get(format!("{}/v1/channels", lightning_url))
+                .header("Grpc-Metadata-macaroon", macaroon)
+                .send()
+                .await
+                .map_err(|e| format!("Erreur de requête: {}", e))?;
+
+            let status = response.status();
+            let body = response
+                .text()
+                .await
+                .map_err(|e| format!("Erreur de lecture: {}", e))?;
+
             Ok(Response::builder()
-                .status(500)
+                .status(status)
                 .header("content-type", "application/json")
                 .header("Access-Control-Allow-Origin", "*")
-                .body(json!({"error": format!("Erreur: {}", e)}).to_string())
-                .expect("failed to render error"))
-        }
+                .body(Body::from(body))
+                .expect("failed to render response"))
+        },
+        "/api/transactions" => {
+            let client = Client::new();
+            let response = client
+                .get(format!("{}/v1/payments", lightning_url))
+                .header("Grpc-Metadata-macaroon", macaroon)
+                .send()
+                .await
+                .map_err(|e| format!("Erreur de requête: {}", e))?;
+
+            let status = response.status();
+            let body = response
+                .text()
+                .await
+                .map_err(|e| format!("Erreur de lecture: {}", e))?;
+
+            Ok(Response::builder()
+                .status(status)
+                .header("content-type", "application/json")
+                .header("Access-Control-Allow-Origin", "*")
+                .body(Body::from(body))
+                .expect("failed to render response"))
+        },
+        _ => Ok(Response::builder()
+            .status(404)
+            .header("content-type", "application/json")
+            .body(Body::from(json!({"error": "Route non trouvée"}).to_string()))
+            .expect("failed to render error"))
     }
 } 

@@ -1,4 +1,6 @@
 use actix_web::{web, HttpResponse, Responder};
+use serde_json::json;
+
 use crate::services::lightning::LightningService;
 use crate::models::lightning::{Channel, NodeInfo, Transaction};
 
@@ -7,9 +9,7 @@ pub async fn get_node_info(service: web::Data<LightningService>) -> impl Respond
         Ok(info) => HttpResponse::Ok().json(info),
         Err(e) => {
             eprintln!("Erreur lors de la récupération des informations du nœud: {}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Erreur lors de la récupération des informations du nœud"
-            }))
+            HttpResponse::InternalServerError().json(format!("Erreur: {}", e))
         }
     }
 }
@@ -19,9 +19,7 @@ pub async fn list_channels(service: web::Data<LightningService>) -> impl Respond
         Ok(channels) => HttpResponse::Ok().json(channels),
         Err(e) => {
             eprintln!("Erreur lors de la récupération des canaux: {}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Erreur lors de la récupération des canaux"
-            }))
+            HttpResponse::InternalServerError().json(format!("Erreur: {}", e))
         }
     }
 }
@@ -31,9 +29,17 @@ pub async fn list_transactions(service: web::Data<LightningService>) -> impl Res
         Ok(transactions) => HttpResponse::Ok().json(transactions),
         Err(e) => {
             eprintln!("Erreur lors de la récupération des transactions: {}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Erreur lors de la récupération des transactions"
-            }))
+            HttpResponse::InternalServerError().json(format!("Erreur: {}", e))
+        }
+    }
+}
+
+pub async fn get_network_stats(service: web::Data<LightningService>) -> impl Responder {
+    match service.get_network_stats().await {
+        Ok(stats) => HttpResponse::Ok().json(stats),
+        Err(e) => {
+            eprintln!("Erreur lors de la récupération des statistiques réseau: {}", e);
+            HttpResponse::InternalServerError().json(format!("Erreur: {}", e))
         }
     }
 } 
