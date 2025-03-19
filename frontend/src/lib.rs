@@ -2,7 +2,6 @@ use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use wasm_logger;
 use crate::components::dashboard::Dashboard;
-use crate::services::api::ApiService;
 use web_sys::window;
 use js_sys::Reflect;
 
@@ -36,14 +35,14 @@ pub fn app() -> Html {
         (),
     );
 
-    let api_service = ApiService::new(get_api_url());
+    let api_service = services::api::ApiService::new(get_api_url());
 
     html! {
         <div class="min-h-screen bg-gray-100">
             <Nav />
             <main class="container mx-auto px-4 py-8">
                 <div class="grid grid-cols-1 gap-8">
-                    <Dashboard api_service={api_service} />
+                    <Dashboard api_service={api_service.clone()} />
                     <Actions api_service={api_service.clone()} />
                 </div>
             </main>

@@ -1,294 +1,175 @@
 use yew::prelude::*;
 use crate::services::api::ApiService;
-use crate::models::{SimulationResult, FeeSimulation, ImpactSeverity};
-use web_sys::HtmlInputElement;
-use wasm_bindgen::JsCast;
-use gloo_timers::callback::Timeout;
+use crate::models::{SimulationResult, ImpactSeverity};
+use wasm_bindgen_futures::spawn_local;
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, Clone, PartialEq)]
 pub struct FeeSimulatorProps {
     pub api_service: ApiService,
 }
 
-pub struct FeeSimulator {
-    base_fee: u64,
-    fee_rate: u64,
-    simulation_result: Option<SimulationResult>,
-    is_simulating: bool,
-    error: Option<String>,
-    simulation_timeout: Option<Timeout>,
-}
+#[function_component(FeeSimulator)]
+pub fn fee_simulator(props: &FeeSimulatorProps) -> Html {
+    let base_fee = use_state(|| 1000u64);
+    let fee_rate = use_state(|| 0.0001f64);
+    let result = use_state(|| None::<SimulationResult>);
+    let loading = use_state(|| false);
+    let error = use_state(|| None::<String>);
 
-pub enum Msg {
-    UpdateBaseFee(u64),
-    UpdateFeeRate(u64),
-    SimulateButtonClicked,
-    SimulationReceived(Result<SimulationResult, String>),
-    ResetSimulation,
-}
+    let on_simulate = {
+        let base_fee = base_fee.clone();
+        let fee_rate = fee_rate.clone();
+        let result = result.clone();
+        let loading = loading.clone();
+        let error = error.clone();
+        let api_service = props.api_service.clone();
 
-impl Component for FeeSimulator {
-    type Message = Msg;
-    type Properties = FeeSimulatorProps;
+        Callback::from(move |_| {
+            loading.set(true);
+            error.set(None);
+            let base_fee_val = *base_fee;
+            let fee_rate_val = *fee_rate;
+            let result = result.clone();
+            let loading = loading.clone();
+            let error = error.clone();
+            let api_service = api_service.clone();
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self {
-            base_fee: 0,
-            fee_rate: 0,
-            simulation_result: None,
-            is_simulating: false,
-            error: None,
-            simulation_timeout: None,
-        }
-    }
-
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            Msg::UpdateBaseFee(value) => {
-                self.base_fee = value;
-                true
-            }
-            Msg::UpdateFeeRate(value) => {
-                self.fee_rate = value;
-                true
-            }
-            Msg::SimulateButtonClicked => {
-                self.is_simulating = true;
-                self.error = None;
-                
-                let api_service = ctx.props().api_service.clone();
-                let base_fee = self.base_fee;
-                let fee_rate = self.fee_rate;
-                
-                ctx.link().send_future(async move {
-                    match api_service.simulate_fees(base_fee, fee_rate).await {
-                        Ok(result) => Msg::SimulationReceived(Ok(result)),
-                        Err(e) => Msg::SimulationReceived(Err(e)),
-                    }
-                });
-                
-                true
-            }
-            Msg::SimulationReceived(result) => {
-                self.is_simulating = false;
-                match result {
-                    Ok(simulation) => {
-                        self.simulation_result = Some(simulation);
-                        self.error = None;
+            spawn_local(async move {
+                match api_service.simulate_fees(base_fee_val, fee_rate_val).await {
+                    Ok(simulation_result) => {
+                        result.set(Some(simulation_result));
+                        loading.set(false);
                     }
                     Err(e) => {
-                        self.error = Some(e);
-                        self.simulation_result = None;
+                        error.set(Some(e.as_string().unwrap_or_else(|| "Une erreur est survenue".to_string())));
+                        loading.set(false);
                     }
                 }
-                true
+            });
+        })
+    };
+
+    let on_base_fee_change = {
+        let base_fee = base_fee.clone();
+        Callback::from(move |e: Event| {
+            let input: web_sys::HtmlInputElement = e.target_unchecked_into();
+            if let Ok(value) = input.value().parse::<u64>() {
+                base_fee.set(value);
             }
-            Msg::ResetSimulation => {
-                self.simulation_result = None;
-                self.error = None;
-                self.is_simulating = false;
-                true
+        })
+    };
+
+    let on_fee_rate_change = {
+        let fee_rate = fee_rate.clone();
+        Callback::from(move |e: Event| {
+            let input: web_sys::HtmlInputElement = e.target_unchecked_into();
+            if let Ok(value) = input.value().parse::<f64>() {
+                fee_rate.set(value);
             }
-        }
-    }
+        })
+    };
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <div class="bg-white shadow rounded-lg p-6">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">{"Simulateur de Frais"}</h2>
-
-                // Formulaire de simulation
-                <div class="space-y-4 mb-8">
-                    <div>
-                        <label for="base_fee" class="block text-sm font-medium text-gray-700">
-                            {"Frais de base (sats)"}
-                        </label>
-                        <div class="mt-1">
-                            <input
-                                type="number"
-                                id="base_fee"
-                                class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                value={self.base_fee.to_string()}
-                                onchange={ctx.link().callback(|e: Event| {
-                                    let input: HtmlInputElement = e.target_unchecked_into();
-                                    Msg::UpdateBaseFee(input.value().parse().unwrap_or(0))
-                                })}
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="fee_rate" class="block text-sm font-medium text-gray-700">
-                            {"Taux de frais (ppm)"}
-                        </label>
-                        <div class="mt-1">
-                            <input
-                                type="number"
-                                id="fee_rate"
-                                class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                value={self.fee_rate.to_string()}
-                                onchange={ctx.link().callback(|e: Event| {
-                                    let input: HtmlInputElement = e.target_unchecked_into();
-                                    Msg::UpdateFeeRate(input.value().parse().unwrap_or(0))
-                                })}
-                            />
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end space-x-4">
-                        <button
-                            type="button"
-                            class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            onclick={ctx.link().callback(|_| Msg::ResetSimulation)}
-                            disabled={self.is_simulating}
-                        >
-                            {"Réinitialiser"}
-                        </button>
-                        <button
-                            type="button"
-                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            onclick={ctx.link().callback(|_| Msg::SimulateButtonClicked)}
-                            disabled={self.is_simulating}
-                        >
-                            {if self.is_simulating {
-                                "Simulation en cours..."
-                            } else {
-                                "Simuler"
-                            }}
-                        </button>
-                    </div>
+    html! {
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-2xl font-bold mb-6">{"Simulateur de frais"}</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="base-fee">
+                        {"Frais de base (sats)"}
+                    </label>
+                    <input
+                        type="number"
+                        id="base-fee"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={(*base_fee).to_string()}
+                        onchange={on_base_fee_change}
+                        min="0"
+                    />
                 </div>
-
-                // Résultats de la simulation
-                {if let Some(result) = &self.simulation_result {
-                    self.view_simulation_results(result)
-                } else if let Some(error) = &self.error {
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="fee-rate">
+                        {"Taux de frais (ppm)"}
+                    </label>
+                    <input
+                        type="number"
+                        id="fee-rate"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={(*fee_rate).to_string()}
+                        onchange={on_fee_rate_change}
+                        step="0.0001"
+                        min="0"
+                    />
+                </div>
+            </div>
+            <div class="flex justify-center mb-6">
+                <button
+                    onclick={on_simulate}
+                    disabled={*loading}
+                    class="px-6 py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {
+                        if *loading {
+                            "Simulation en cours..."
+                        } else {
+                            "Simuler"
+                        }
+                    }
+                </button>
+            </div>
+            {
+                if let Some(error_msg) = (*error).clone() {
                     html! {
-                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                            {error}
+                        <div class="text-red-500 text-center mb-6">
+                            {error_msg}
+                        </div>
+                    }
+                } else if let Some(sim_result) = (*result).clone() {
+                    html! {
+                        <div class="border rounded-lg p-6">
+                            <h3 class="text-xl font-semibold mb-4">{"Résultats de la simulation"}</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">{"Revenus estimés (par mois)"}</p>
+                                    <p class="text-2xl font-bold">{format!("{} sats", sim_result.estimated_revenue)}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">{"Impact sur le routage"}</p>
+                                    {
+                                        let (color_class, text) = match sim_result.routing_impact.severity {
+                                            ImpactSeverity::Positive => ("text-green-600", "Positif"),
+                                            ImpactSeverity::Neutral => ("text-gray-600", "Neutre"),
+                                            ImpactSeverity::Negative => ("text-red-600", "Négatif"),
+                                        };
+                                        html! {
+                                            <p class={format!("text-2xl font-bold {}", color_class)}>{text}</p>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <p class="text-sm text-gray-600 mb-1">{"Variation des revenus"}</p>
+                                {
+                                    let current = sim_result.current_revenue;
+                                    let simulated = sim_result.estimated_revenue;
+                                    let percentage = (simulated as f64 - current as f64) / current as f64 * 100.0;
+                                    let (color_class, sign) = if percentage >= 0.0 {
+                                        ("text-green-600", "+")
+                                    } else {
+                                        ("text-red-600", "")
+                                    };
+                                    html! {
+                                        <p class={format!("text-lg font-semibold {}", color_class)}>
+                                            {format!("{}{}%", sign, percentage.abs().round())}
+                                        </p>
+                                    }
+                                }
+                            </div>
                         </div>
                     }
                 } else {
                     html! {}
-                }}
-            </div>
-        }
-    }
-}
-
-impl FeeSimulator {
-    fn view_simulation_results(&self, result: &SimulationResult) -> Html {
-        html! {
-            <div class="space-y-6">
-                <div class="border-t border-gray-200 pt-6">
-                    <h3 class="text-lg font-medium text-gray-900">{"Résultats de la simulation"}</h3>
-                    
-                    // Comparaison des métriques clés
-                    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        {self.view_metric_comparison("Revenus estimés", 
-                            result.current.estimated_revenue, 
-                            result.simulated.estimated_revenue, 
-                            "sats")}
-                        
-                        {self.view_metric_comparison("Volume de routage", 
-                            result.current.estimated_routing_volume, 
-                            result.simulated.estimated_routing_volume, 
-                            "sats")}
-                            
-                        {self.view_metric_comparison("Taux de succès", 
-                            (result.current.estimated_success_rate * 100.0) as u64, 
-                            (result.simulated.estimated_success_rate * 100.0) as u64, 
-                            "%")}
-                            
-                        {self.view_metric_comparison("Score de compétitivité", 
-                            (result.current.competitive_score * 100.0) as u64, 
-                            (result.simulated.competitive_score * 100.0) as u64, 
-                            "%")}
-                    </div>
-
-                    // Analyse d'impact
-                    <div class="mt-6">
-                        <h4 class="text-sm font-medium text-gray-900">{"Analyse d'impact"}</h4>
-                        <div class="mt-2 space-y-4">
-                            {for result.impact_analysis.iter().map(|impact| {
-                                let (bg_color, text_color) = match impact.severity {
-                                    ImpactSeverity::Positive => ("bg-green-50", "text-green-800"),
-                                    ImpactSeverity::Neutral => ("bg-gray-50", "text-gray-800"),
-                                    ImpactSeverity::Negative => ("bg-red-50", "text-red-800"),
-                                };
-                                
-                                html! {
-                                    <div class={format!("p-4 rounded-lg {}", bg_color)}>
-                                        <div class="flex">
-                                            <div class="flex-1">
-                                                <h5 class={format!("text-sm font-medium {}", text_color)}>
-                                                    {&impact.metric}
-                                                </h5>
-                                                <p class="mt-1 text-sm text-gray-600">
-                                                    {&impact.description}
-                                                </p>
-                                            </div>
-                                            <div class={format!("ml-4 text-sm font-medium {}", text_color)}>
-                                                {format!("{:+.1}%", impact.change)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            })}
-                        </div>
-                    </div>
-
-                    // Recommandation
-                    <div class="mt-6 bg-blue-50 p-4 rounded-lg">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <h4 class="text-sm font-medium text-blue-800">{"Recommandation"}</h4>
-                                <p class="mt-2 text-sm text-blue-700">
-                                    {&result.recommendation}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-    }
-
-    fn view_metric_comparison(&self, label: &str, current: u64, simulated: u64, unit: &str) -> Html {
-        let change_percentage = if current > 0 {
-            ((simulated as f64 - current as f64) / current as f64 * 100.0)
-        } else {
-            0.0
-        };
-
-        let (change_color, arrow) = if change_percentage > 0.0 {
-            ("text-green-600", "↑")
-        } else if change_percentage < 0.0 {
-            ("text-red-600", "↓")
-        } else {
-            ("text-gray-600", "→")
-        };
-
-        html! {
-            <div class="bg-gray-50 rounded-lg p-4">
-                <div class="text-sm font-medium text-gray-500">{label}</div>
-                <div class="mt-1 flex items-baseline justify-between">
-                    <div class="text-2xl font-semibold text-gray-900">
-                        {format!("{} {}", simulated, unit)}
-                    </div>
-                    <div class={format!("text-sm font-medium {}", change_color)}>
-                        {format!("{} {:.1}%", arrow, change_percentage.abs())}
-                    </div>
-                </div>
-                <div class="text-sm text-gray-500 mt-1">
-                    {format!("Actuellement: {} {}", current, unit)}
-                </div>
-            </div>
-        }
+                }
+            }
+        </div>
     }
 } 

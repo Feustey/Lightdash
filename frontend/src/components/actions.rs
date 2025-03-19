@@ -3,11 +3,12 @@ use serde::{Deserialize, Serialize};
 use crate::services::ApiService;
 use gloo_timers::callback::Interval;
 use crate::services::api::ApiService as ApiService;
-use crate::models::{SparkSeerStats, FeeHistory, PeerComparison, SuggestedPeer, Recommendation};
+use crate::models::{SparkSeerStats, FeeHistory, PeerComparison, SuggestedPeer, Recommendation, RecommendationSeverity};
 use web_sys::HtmlCanvasElement;
 use wasm_bindgen::JsCast;
 use js_sys::Date;
 use crate::components::fee_simulator::FeeSimulator;
+use wasm_bindgen_futures::spawn_local;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeHealth {
@@ -35,7 +36,7 @@ pub struct ActionsComponent {
     _interval: Option<Interval>,
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, Clone, PartialEq)]
 pub struct ActionsProps {
     pub api_service: ApiService,
 }
@@ -207,14 +208,15 @@ pub fn actions(props: &ActionsProps) -> Html {
 
         use_effect_with_deps(
             move |_| {
-                wasm_bindgen_futures::spawn_local(async move {
-                    match api_service.get_recommendations().await {
+                loading.set(true);
+                spawn_local(async move {
+                    match api_service.get_ai_recommendations().await {
                         Ok(data) => {
                             recommendations.set(data);
                             loading.set(false);
                         }
                         Err(e) => {
-                            error.set(Some(e.as_string().unwrap_or_else(|| "Erreur inconnue".to_string())));
+                            error.set(Some(e.as_string().unwrap_or_else(|| "Une erreur est survenue".to_string())));
                             loading.set(false);
                         }
                     }
@@ -228,36 +230,59 @@ pub fn actions(props: &ActionsProps) -> Html {
     html! {
         <div class="bg-white shadow rounded-lg p-6">
             <h2 class="text-2xl font-bold mb-4">{"Actions recommandées"}</h2>
-            
-            if *loading {
-                <div class="flex justify-center items-center py-8">
-                    <div class="loading-spinner"></div>
-                </div>
-            } else if let Some(error_msg) = &*error {
-                <div class="text-red-500 text-center py-4">
-                    {error_msg}
-                </div>
-            } else if recommendations.is_empty() {
-                <div class="text-gray-500 text-center py-4">
-                    {"Aucune action recommandée pour le moment."}
-                </div>
-            } else {
-                <div class="space-y-4">
-                    {for recommendations.iter().map(|rec| {
-                        let severity_class = match rec.severity {
-                            crate::models::RecommendationSeverity::High => "border-red-500 bg-red-50",
-                            crate::models::RecommendationSeverity::Medium => "border-yellow-500 bg-yellow-50",
-                            crate::models::RecommendationSeverity::Low => "border-blue-500 bg-blue-50",
-                        };
-                        
-                        html! {
-                            <div class={format!("p-4 rounded-lg border-l-4 {}", severity_class)}>
-                                <h3 class="font-semibold mb-2">{&rec.title}</h3>
-                                <p class="text-gray-600">{&rec.description}</p>
-                            </div>
-                        }
-                    })}
-                </div>
+            {
+                if *loading {
+                    html! {
+                        <div class="flex justify-center items-center h-32">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                        </div>
+                    }
+                } else if let Some(error_msg) = (*error).clone() {
+                    html! {
+                        <div class="text-red-500 text-center">
+                            {error_msg}
+                        </div>
+                    }
+                } else if (*recommendations).is_empty() {
+                    html! {
+                        <div class="text-gray-500 text-center">
+                            {"Aucune action recommandée pour le moment"}
+                        </div>
+                    }
+                } else {
+                    html! {
+                        <div class="grid grid-cols-1 gap-4">
+                            {
+                                (*recommendations).iter().map(|recommendation| {
+                                    let severity_class = match recommendation.severity {
+                                        RecommendationSeverity::High => "bg-red-100 border-red-500",
+                                        RecommendationSeverity::Medium => "bg-yellow-100 border-yellow-500",
+                                        RecommendationSeverity::Low => "bg-green-100 border-green-500",
+                                    };
+
+                                    html! {
+                                        <div class={format!("p-4 rounded-lg border-l-4 {}", severity_class)}>
+                                            <h3 class="text-lg font-semibold mb-2">{&recommendation.title}</h3>
+                                            <p class="text-gray-600 mb-4">{&recommendation.description}</p>
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm text-gray-500">
+                                                    {format!("Impact : {}", match recommendation.severity {
+                                                        RecommendationSeverity::High => "Élevé",
+                                                        RecommendationSeverity::Medium => "Moyen",
+                                                        RecommendationSeverity::Low => "Faible",
+                                                    })}
+                                                </span>
+                                                <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                                                    {"Appliquer"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                }).collect::<Html>()
+                            }
+                        </div>
+                    }
+                }
             }
         </div>
     }
