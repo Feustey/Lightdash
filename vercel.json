@@ -5,6 +5,10 @@
     "framework": null,
     "rewrites": [
         {
+            "source": "/api/(.*)",
+            "destination": "/api/index"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }
@@ -19,5 +23,10 @@
                 }
             ]
         }
-    ]
+    ],
+    "env": {
+        "NEXT_PUBLIC_API_URL": "https://api.lightdash.vercel.app",
+        "NEXT_PUBLIC_SPARKSEER_API_KEY": "@sparkseer-api-key",
+        "NEXT_PUBLIC_NODE_PUBKEY": "@node-pubkey"
+    }
 } 
