@@ -1,59 +1,27 @@
 use wasm_bindgen::prelude::*;
-use yew::prelude::*;
-use wasm_logger;
-use crate::components::dashboard::Dashboard;
 use web_sys::window;
-use js_sys::Reflect;
+use crate::services::api::ApiService;
+use crate::components::dashboard::Dashboard;
 
-pub mod models;
-pub mod services;
-pub mod components;
+mod components;
+mod services;
+mod models;
 
-use components::nav::Nav;
-use components::actions::Actions;
-
-fn get_api_url() -> String {
-    if let Some(window) = window() {
-        if let Ok(env) = Reflect::get(&window, &wasm_bindgen::JsValue::from_str("ENV")) {
-            if let Ok(api_url) = Reflect::get(&env, &wasm_bindgen::JsValue::from_str("API_URL")) {
-                if let Some(url) = api_url.as_string() {
-                    return url;
-                }
-            }
-        }
-    }
-    String::from("https://api.lightdash.vercel.app")
-}
-
-#[function_component(App)]
-pub fn app() -> Html {
-    use_effect_with_deps(
-        |_| {
-            wasm_logger::init(wasm_logger::Config::default());
-            || ()
-        },
-        (),
-    );
-
-    let api_service = services::api::ApiService::new(get_api_url());
-
-    html! {
-        <div class="min-h-screen bg-gray-100">
-            <Nav />
-            <main class="container mx-auto px-4 py-8">
-                <div class="grid grid-cols-1 gap-8">
-                    <Dashboard api_service={api_service.clone()} />
-                    <Actions api_service={api_service.clone()} />
-                </div>
-            </main>
-        </div>
-    }
-}
-
-#[wasm_bindgen]
+#[wasm_bindgen(start)]
 pub fn run_app() -> Result<(), JsValue> {
-    console_error_panic_hook::set_once();
-    yew::Renderer::<App>::new().render();
+    wasm_logger::init(wasm_logger::Config::default());
+    std::panic::set_hook(Box::new(console_error_panic_hook::set_once));
+
+    let window = window().unwrap();
+    let document = window.document().unwrap();
+    let element = document.get_element_by_id("app").unwrap();
+
+    let api_service = ApiService::new();
+    
+    yew::Renderer::<Dashboard>::with_root_and_props(element, DashboardProps {
+        api_service,
+    }).render();
+
     Ok(())
 }
 

@@ -51,19 +51,12 @@ pub enum TransactionStatus {
     Pending,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ImpactSeverity {
-    High,
-    Medium,
-    Low,
-}
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Recommendation {
     pub title: String,
     pub description: String,
     pub severity: RecommendationSeverity,
-    pub action_type: ActionType,
+    pub channel_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -89,53 +82,44 @@ pub struct FeeSimulation {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SimulationResult {
-    pub estimated_revenue: u64,
     pub current_revenue: u64,
-    pub routing_impact: Impact,
+    pub routing_impact: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq)]
 pub struct SparkSeerStats {
-    pub total_capacity: u64,
     pub active_channels: u64,
-    pub avg_fee_rate: f64,
-    pub success_rate: f64,
-    pub routing_volume: u64,
-    pub num_channels: u64,
-    pub health_score: u64,
+    pub total_capacity: u64,
+    pub monthly_revenue: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct FeeHistory {
-    pub timestamp: u64,
-    pub base_fee: u64,
-    pub fee_rate: f64,
+#[derive(Clone, PartialEq)]
+pub struct FeeHistoryEntry {
+    pub date: String,
     pub revenue: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct PeerComparison {
-    pub peer_pubkey: String,
-    pub fee_rate: f64,
-    pub base_fee: u64,
-    pub success_rate: f64,
-    pub volume: u64,
+#[derive(Clone, PartialEq)]
+pub struct FeeHistory {
+    pub entries: Vec<FeeHistoryEntry>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq)]
 pub struct SuggestedPeer {
-    pub pubkey: String,
     pub alias: String,
-    pub capacity: u64,
-    pub channels: u64,
-    pub score: f64,
+    pub similarity: f64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq)]
+pub struct PeerComparison {
+    pub suggested_peers: Vec<SuggestedPeer>,
+}
+
+#[derive(Clone, PartialEq)]
 pub enum RecommendationSeverity {
-    High,
-    Medium,
     Low,
+    Medium,
+    High,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -146,15 +130,15 @@ pub enum ActionType {
     Rebalance,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Impact {
-    pub description: String,
-    pub severity: ImpactSeverity,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum ImpactSeverity {
     Positive,
     Neutral,
     Negative,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Impact {
+    pub description: String,
+    pub severity: ImpactSeverity,
 } 
