@@ -21,8 +21,8 @@ COPY frontend/Cargo.toml frontend/Cargo.lock frontend/
 COPY frontend/package.json frontend/package-lock.json frontend/
 
 # Création d'un projet temporaire pour précompiler les dépendances
-RUN mkdir frontend/src && \
-    echo "fn main() {}" > frontend/src/main.rs && \
+RUN mkdir -p frontend/src && \
+    echo "use wasm_bindgen::prelude::*;\n#[wasm_bindgen]\npub fn init() {}" > frontend/src/lib.rs && \
     cd frontend && \
     cargo build && \
     npm install
