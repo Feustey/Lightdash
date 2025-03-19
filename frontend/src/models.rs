@@ -58,12 +58,12 @@ pub enum ImpactSeverity {
     Low,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Recommendation {
     pub title: String,
     pub description: String,
-    pub severity: ImpactSeverity,
-    pub action_required: bool,
+    pub severity: RecommendationSeverity,
+    pub action_type: ActionType,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -87,18 +87,74 @@ pub struct FeeSimulation {
     pub revenue_change: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SimulationResult {
     pub estimated_revenue: u64,
-    pub routing_volume: u64,
-    pub success_rate: f64,
-    pub competitiveness_score: f64,
-    pub impacts: Vec<SimulationImpact>,
+    pub current_revenue: u64,
+    pub routing_impact: Impact,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SimulationImpact {
-    pub metric: String,
-    pub change_percent: f64,
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SparkSeerStats {
+    pub total_capacity: u64,
+    pub active_channels: u64,
+    pub avg_fee_rate: f64,
+    pub success_rate: f64,
+    pub routing_volume: u64,
+    pub num_channels: u64,
+    pub health_score: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FeeHistory {
+    pub timestamp: u64,
+    pub base_fee: u64,
+    pub fee_rate: f64,
+    pub revenue: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PeerComparison {
+    pub peer_pubkey: String,
+    pub fee_rate: f64,
+    pub base_fee: u64,
+    pub success_rate: f64,
+    pub volume: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SuggestedPeer {
+    pub pubkey: String,
+    pub alias: String,
+    pub capacity: u64,
+    pub channels: u64,
+    pub score: f64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum RecommendationSeverity {
+    High,
+    Medium,
+    Low,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum ActionType {
+    UpdateFees,
+    OpenChannel,
+    CloseChannel,
+    Rebalance,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Impact {
     pub description: String,
+    pub severity: ImpactSeverity,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum ImpactSeverity {
+    Positive,
+    Neutral,
+    Negative,
 } 

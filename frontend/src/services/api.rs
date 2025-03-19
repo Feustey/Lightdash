@@ -1,117 +1,78 @@
-use crate::models::{SparkSeerStats, FeeHistory, PeerComparison, SuggestedPeer, SimulationResult};
+use wasm_bindgen::prelude::*;
 use gloo_net::http::Request;
+use crate::models::{SparkSeerStats, FeeHistory, PeerComparison, SuggestedPeer, SimulationResult, Recommendation};
 use serde_json::Value;
-use wasm_bindgen::JsValue;
-use web_sys::window;
+use serde_json::json;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct ApiService {
     base_url: String,
-    api_key: String,
-    node_pubkey: String,
 }
 
 impl ApiService {
-    pub fn new() -> Self {
-        let window = window().expect("no global `window` exists");
-        let env = window
-            .get("env")
-            .expect("no env object found")
-            .dyn_into::<JsValue>()
-            .expect("env is not an object");
-        
-        let base_url = js_sys::Reflect::get(&env, &"NEXT_PUBLIC_API_URL".into())
-            .expect("NEXT_PUBLIC_API_URL not found")
-            .as_string()
-            .expect("NEXT_PUBLIC_API_URL is not a string");
+    pub fn new(base_url: String) -> Self {
+        Self { base_url }
+    }
+
+    pub async fn get_node_health(&self) -> Result<SparkSeerStats, JsValue> {
+        let url = format!("{}/api/node/health", self.base_url);
+        let response = Request::get(&url)
+            .send()
+            .await
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        response.json::<SparkSeerStats>().await.map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    pub async fn get_ai_recommendations(&self) -> Result<Vec<Recommendation>, JsValue> {
+        let url = format!("{}/api/recommendations", self.base_url);
+        let response = Request::get(&url)
+            .send()
+            .await
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        response.json::<Vec<Recommendation>>().await.map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    pub async fn get_fee_history(&self) -> Result<FeeHistory, JsValue> {
+        let url = format!("{}/api/fees/history", self.base_url);
+        let response = Request::get(&url)
+            .send()
+            .await
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
             
-        let api_key = js_sys::Reflect::get(&env, &"SPARKSEER_API_KEY".into())
-            .expect("SPARKSEER_API_KEY not found")
-            .as_string()
-            .expect("SPARKSEER_API_KEY is not a string");
+        response.json().await.map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    pub async fn get_peer_comparisons(&self) -> Result<Vec<PeerComparison>, JsValue> {
+        let url = format!("{}/api/peers/compare", self.base_url);
+        let response = Request::get(&url)
+            .send()
+            .await
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
             
-        let node_pubkey = js_sys::Reflect::get(&env, &"NODE_PUBKEY".into())
-            .expect("NODE_PUBKEY not found")
-            .as_string()
-            .expect("NODE_PUBKEY is not a string");
-
-        Self {
-            base_url,
-            api_key,
-            node_pubkey,
-        }
+        response.json().await.map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
-    pub async fn get_node_stats(&self) -> Result<SparkSeerStats, String> {
-        let url = format!("{}/v1/node/current-stats/{}", self.base_url, self.node_pubkey);
-        
+    pub async fn get_suggested_peers(&self) -> Result<Vec<SuggestedPeer>, JsValue> {
+        let url = format!("{}/api/peers/suggest", self.base_url);
         let response = Request::get(&url)
-            .header("api-key", &self.api_key)
             .send()
             .await
-            .map_err(|e| e.to_string())?;
-
-        let json: Value = response.json().await.map_err(|e| e.to_string())?;
-        
-        let stats = &json.as_array()
-            .ok_or("Response is not an array")?[0];
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
             
-        serde_json::from_value(stats.clone())
-            .map_err(|e| e.to_string())
+        response.json().await.map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
-    pub async fn get_fee_history(&self) -> Result<Vec<FeeHistory>, String> {
-        let url = format!("{}/v1/node/fee-history/{}", self.base_url, self.node_pubkey);
-        
-        let response = Request::get(&url)
-            .header("api-key", &self.api_key)
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
-
-        response.json().await.map_err(|e| e.to_string())
-    }
-
-    pub async fn get_peer_comparisons(&self) -> Result<Vec<PeerComparison>, String> {
-        let url = format!("{}/v1/node/peer-comparisons/{}", self.base_url, self.node_pubkey);
-        
-        let response = Request::get(&url)
-            .header("api-key", &self.api_key)
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
-
-        response.json().await.map_err(|e| e.to_string())
-    }
-
-    pub async fn get_suggested_peers(&self) -> Result<Vec<SuggestedPeer>, String> {
-        let url = format!("{}/v1/node/suggested-peers/{}", self.base_url, self.node_pubkey);
-        
-        let response = Request::get(&url)
-            .header("api-key", &self.api_key)
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
-
-        response.json().await.map_err(|e| e.to_string())
-    }
-
-    pub async fn simulate_fees(&self, base_fee: u64, fee_rate: u64) -> Result<SimulationResult, String> {
-        let url = format!("{}/v1/services/simulate-fees/{}", self.base_url, self.node_pubkey);
-        
-        let params = serde_json::json!({
-            "base_fee": base_fee,
-            "fee_rate": fee_rate
-        });
-
+    pub async fn simulate_fees(&self, base_fee: u64, fee_rate: f64) -> Result<SimulationResult, JsValue> {
+        let url = format!("{}/api/fees/simulate", self.base_url);
         let response = Request::post(&url)
-            .header("api-key", &self.api_key)
-            .json(&params)
-            .map_err(|e| e.to_string())?
+            .json(&serde_json::json!({
+                "base_fee": base_fee,
+                "fee_rate": fee_rate
+            }))
+            .map_err(|e| JsValue::from_str(&e.to_string()))?
             .send()
             .await
-            .map_err(|e| e.to_string())?;
-
-        response.json().await.map_err(|e| e.to_string())
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        response.json::<SimulationResult>().await.map_err(|e| JsValue::from_str(&e.to_string()))
     }
 } 
