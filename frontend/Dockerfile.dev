@@ -1,0 +1,30 @@
+FROM rust:1.75-slim
+
+# Installation des dépendances système
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    pkg-config \
+    nodejs \
+    npm \
+    && rm -rf /var/lib/apt/lists/*
+
+# Installation de wasm-pack et trunk
+RUN rustup target add wasm32-unknown-unknown \
+    && cargo install trunk
+
+# Configuration du répertoire de travail
+WORKDIR /app
+
+# Copie des fichiers de dépendances
+COPY frontend/Cargo.toml frontend/Cargo.lock frontend/
+COPY frontend/package.json frontend/package-lock.json frontend/
+
+# Création d'un projet temporaire pour précompiler les dépendances
+RUN mkdir frontend/src && \
+    echo "fn main() {}" > frontend/src/main.rs && \
+    cd frontend && \
+    cargo build && \
+    npm install
+
+# Le reste des fichiers sera monté en volume 
