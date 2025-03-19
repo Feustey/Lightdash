@@ -51,12 +51,54 @@ pub enum TransactionStatus {
     Pending,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct SparkSeerStats {
+    pub active_channels: u64,
+    pub total_capacity: u64,
+    pub monthly_revenue: u64,
+}
+
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct FeeHistoryEntry {
+    pub date: String,
+    pub revenue: u64,
+}
+
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct FeeHistory {
+    pub entries: Vec<FeeHistoryEntry>,
+}
+
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct SuggestedPeer {
+    pub alias: String,
+    pub similarity: f64,
+}
+
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct PeerComparison {
+    pub suggested_peers: Vec<SuggestedPeer>,
+}
+
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub enum RecommendationSeverity {
+    Low,
+    Medium,
+    High,
+}
+
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Recommendation {
     pub title: String,
     pub description: String,
     pub severity: RecommendationSeverity,
     pub channel_id: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct SimulationResult {
+    pub current_revenue: u64,
+    pub routing_impact: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -78,48 +120,6 @@ pub struct FeeSimulation {
     pub competitive_score: f64,
     pub potential_new_peers: u32,
     pub revenue_change: f64,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct SimulationResult {
-    pub current_revenue: u64,
-    pub routing_impact: f64,
-}
-
-#[derive(Clone, PartialEq)]
-pub struct SparkSeerStats {
-    pub active_channels: u64,
-    pub total_capacity: u64,
-    pub monthly_revenue: u64,
-}
-
-#[derive(Clone, PartialEq)]
-pub struct FeeHistoryEntry {
-    pub date: String,
-    pub revenue: u64,
-}
-
-#[derive(Clone, PartialEq)]
-pub struct FeeHistory {
-    pub entries: Vec<FeeHistoryEntry>,
-}
-
-#[derive(Clone, PartialEq)]
-pub struct SuggestedPeer {
-    pub alias: String,
-    pub similarity: f64,
-}
-
-#[derive(Clone, PartialEq)]
-pub struct PeerComparison {
-    pub suggested_peers: Vec<SuggestedPeer>,
-}
-
-#[derive(Clone, PartialEq)]
-pub enum RecommendationSeverity {
-    Low,
-    Medium,
-    High,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]

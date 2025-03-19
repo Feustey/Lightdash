@@ -1,4 +1,4 @@
-FROM rust:1.76-slim
+FROM rust:1.81-slim
 
 # Installation des dépendances système
 RUN apt-get update && apt-get install -y \
@@ -20,12 +20,19 @@ WORKDIR /app
 COPY frontend/Cargo.toml frontend/
 COPY frontend/package.json frontend/package-lock.json frontend/
 
-# Création d'un projet temporaire pour précompiler les dépendances
-RUN mkdir -p frontend/src frontend/styles frontend/static frontend/dist && \
-    echo "use wasm_bindgen::prelude::*;\n#[wasm_bindgen]\npub fn init() {}" > frontend/src/lib.rs && \
-    touch frontend/styles/main.css && \
-    cd frontend && \
-    cargo build && \
-    npm install
+# Création des répertoires nécessaires
+RUN mkdir -p frontend/src frontend/styles frontend/static frontend/dist
+
+# Création d'un fichier lib.rs minimal pour la précompilation
+RUN echo "use wasm_bindgen::prelude::*;\n#[wasm_bindgen(start)]\npub fn run_app() -> Result<(), JsValue> { Ok(()) }" > frontend/src/lib.rs
+
+# Création d'un fichier CSS minimal
+RUN echo "@tailwind base;\n@tailwind components;\n@tailwind utilities;" > frontend/styles/main.css
+
+# Installation des dépendances Node.js
+RUN cd frontend && npm install
+
+# Précompilation des dépendances Rust
+RUN cd frontend && cargo build --target wasm32-unknown-unknown
 
 # Le reste des fichiers sera monté en volume 

@@ -1,6 +1,7 @@
 use crate::models::{Channel, NodeStats, Recommendation, Transaction};
 use gloo_net::http::Request;
-use wasm_bindgen::JsValue;
+use serde_json::json;
+use wasm_bindgen::prelude::*;
 
 #[derive(Clone, PartialEq)]
 pub struct ApiService {

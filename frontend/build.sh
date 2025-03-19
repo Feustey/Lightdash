@@ -32,10 +32,16 @@ npm install --force
 echo "🎨 Build du CSS..."
 npx tailwindcss -i ./styles/main.css -o ./dist/main.css
 
-# Build du projet avec trunk
-echo "🛠️ Build du projet..."
-RUSTFLAGS='-C target-feature=+atomics,+bulk-memory,+mutable-globals' \
-trunk build --release --public-url /
+# Installation de Rust et des outils nécessaires
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source $HOME/.cargo/env
+rustup target add wasm32-unknown-unknown
+
+# Installation de trunk
+cargo install trunk --version 0.17.5 --locked
+
+# Build du projet
+trunk build --release
 
 # Copie des fichiers statiques
 echo "📂 Copie des fichiers statiques..."

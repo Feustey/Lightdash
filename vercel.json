@@ -1,23 +1,8 @@
 {
-    "buildCommand": "cd frontend && chmod +x build.sh && ./build.sh",
+    "buildCommand": "cd frontend && npm install && trunk build --release",
     "outputDirectory": "frontend/dist",
-    "installCommand": "cd frontend && npm install",
-    "framework": null,
-    "builds": [
-        {
-            "src": "frontend/*",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "dist",
-                "buildCommand": "chmod +x build.sh && ./build.sh"
-            }
-        }
-    ],
+    "framework": "other",
     "rewrites": [
-        {
-            "source": "/api/(.*)",
-            "destination": "/api/index"
-        },
         {
             "source": "/(.*)",
             "destination": "/index.html"

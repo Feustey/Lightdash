@@ -3,18 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lightdash - Gestionnaire de nœud Lightning</title>
+    <title>Lightdash</title>
     <link data-trunk rel="css" href="styles/main.css">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link data-trunk rel="copy-dir" href="static">
-    <base data-trunk-public-url>
-    <script>
-        window.ENV = {
-            API_URL: process.env.NEXT_PUBLIC_API_URL || "https://api.lightdash.vercel.app",
-            SPARKSEER_API_KEY: process.env.NEXT_PUBLIC_SPARKSEER_API_KEY || "",
-            NODE_PUBKEY: process.env.NEXT_PUBLIC_NODE_PUBKEY || ""
-        };
-    </script>
 </head>
 <body class="bg-gray-100">
     <div id="app"></div>

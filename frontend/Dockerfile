@@ -1,4 +1,4 @@
-FROM rust:1.76-slim as builder
+FROM rust:1.81-slim as builder
 
 # Installation des dépendances système
 RUN apt-get update && apt-get install -y \
@@ -21,7 +21,7 @@ COPY frontend/ ./
 
 # Installation des dépendances et build
 RUN npm install && \
-    trunk build --release
+    trunk build --release --target wasm32-unknown-unknown
 
 # Image finale avec Nginx
 FROM nginx:alpine

@@ -80,3 +80,29 @@ yarn-error.log*
 
 # Vercel
 .now
+
+# Additional changes from the code block
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Build
+dist/
+*.wasm
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Vercel
+.vercel/
+
+# Environment
+.env
+.env.local
