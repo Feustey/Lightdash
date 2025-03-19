@@ -17,7 +17,7 @@ RUN rustup target add wasm32-unknown-unknown \
 WORKDIR /app
 
 # Copie des fichiers de dépendances
-COPY frontend/Cargo.toml frontend/Cargo.lock frontend/
+COPY frontend/Cargo.toml frontend/
 COPY frontend/package.json frontend/package-lock.json frontend/
 
 # Création d'un projet temporaire pour précompiler les dépendances
