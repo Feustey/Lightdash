@@ -1,4 +1,4 @@
-FROM rust:1.75-slim as builder
+FROM rust:1.76-slim as builder
 
 # Installation des dépendances système
 RUN apt-get update && apt-get install -y \
@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 
 # Installation de wasm-pack et trunk
 RUN rustup target add wasm32-unknown-unknown \
-    && cargo install trunk
+    && cargo install trunk --version 0.21.0-rc.3
 
 # Configuration du répertoire de travail
 WORKDIR /app
