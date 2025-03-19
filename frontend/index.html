@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lightdash - Tableau de bord Lightning Network</title>
+    <title>Lightdash - Gestionnaire de nœud Lightning</title>
     <link data-trunk rel="css" href="styles/main.css">
-    <link data-trunk rel="copy-dir" href="public">
-    <link data-trunk rel="rust" data-wasm-opt="z">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link data-trunk rel="copy-dir" href="static">
+    <base data-trunk-public-url>
     <script>
         window.env = {
             NEXT_PUBLIC_API_URL: "https://api.sparkseer.space",
