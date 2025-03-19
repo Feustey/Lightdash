@@ -5,9 +5,10 @@ public_url = "/"
 filehash = true
 
 [watch]
-ignore = ["dist/**/*"]
+watch = ["src", "styles"]
 
 [serve]
+address = "127.0.0.1"
 port = 8080
 open = false
 

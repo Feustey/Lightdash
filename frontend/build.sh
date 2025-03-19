@@ -9,41 +9,28 @@ if [ ! -f "Cargo.toml" ]; then
     exit 1
 fi
 
-# Installation de Rust et des outils nécessaires
-echo "📦 Installation de Rust..."
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source $HOME/.cargo/env || source ~/.cargo/env
+# Création du dossier dist s'il n'existe pas
+mkdir -p dist
 
-echo "🎯 Installation de la cible wasm32..."
-rustup target add wasm32-unknown-unknown
+# Installation des dépendances npm et build du CSS
+echo "📦 Installation des dépendances npm..."
+npm install
+echo "🎨 Build du CSS..."
+npx tailwindcss -i ./styles/main.css -o ./dist/main.css
 
-echo "🔧 Installation de trunk..."
-cargo install --locked trunk || true
-
-# Configuration des optimisations
-echo "⚡ Configuration des optimisations..."
-export RUSTFLAGS="-C opt-level=3 -C codegen-units=1"
-
-# Build du frontend
-echo "🏗️ Build du frontend..."
-cd frontend
+# Build du projet avec trunk
+echo "🛠️ Build du projet..."
 trunk build --release
 
-# Vérification et copie des fichiers
-echo "📋 Vérification des fichiers générés..."
-if [ ! -d "dist" ]; then
-    echo "❌ Erreur: Le dossier dist n'a pas été créé"
-    exit 1
+# Copie des fichiers statiques
+echo "📂 Copie des fichiers statiques..."
+if [ -d "static" ]; then
+    cp -r static/* dist/ 2>/dev/null || :
 fi
 
-echo "📦 Copie des fichiers vers le dossier de sortie Vercel..."
-mkdir -p ../.vercel/output/static
-cp -r dist/* ../.vercel/output/static/
+# Vérification de la taille du build
+echo "📊 Taille du build :"
+du -sh dist/
 
-# Vérification des fichiers copiés
-if [ ! -f "../.vercel/output/static/index.html" ]; then
-    echo "❌ Erreur: index.html non trouvé dans le dossier de sortie"
-    exit 1
-fi
-
+# Vérification des fichiers générés
 echo "✅ Build terminé avec succès!" 

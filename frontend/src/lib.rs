@@ -1,22 +1,14 @@
-mod models;
-mod services;
-mod components;
-
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
-use services::ApiService;
-use components::node_info::NodeInfoComponent;
-use components::mcp_channels::McpChannelsComponent;
-use components::mcp_stats::McpStatsComponent;
-use components::actions::ActionsComponent;
-use components::dashboard::Dashboard;
 
-#[wasm_bindgen(start)]
-pub fn run_app() -> Result<(), JsValue> {
-    wasm_logger::init(wasm_logger::Config::default());
-    yew::Renderer::<App>::new().render();
-    Ok(())
-}
+pub mod models;
+pub mod services;
+pub mod components;
+
+use components::nav::Nav;
+use components::dashboard::Dashboard;
+use components::actions::Actions;
+use services::ApiService;
 
 #[function_component(App)]
 pub fn app() -> Html {
@@ -24,23 +16,23 @@ pub fn app() -> Html {
 
     html! {
         <div class="min-h-screen bg-gray-100">
-            <nav class="bg-white shadow-sm">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between h-16">
-                        <div class="flex">
-                            <div class="flex-shrink-0 flex items-center">
-                                <span class="text-xl font-bold text-blue-600">{"⚡ Lightdash"}</span>
-                            </div>
-                        </div>
-                    </div>
+            <Nav />
+            <main class="container mx-auto px-4 py-8">
+                <div class="grid grid-cols-1 gap-8">
+                    <Dashboard api_service={api_service.clone()} />
+                    <Actions api_service={api_service.clone()} />
                 </div>
-            </nav>
-
-            <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <Dashboard api_service={api_service} />
             </main>
         </div>
     }
+}
+
+#[wasm_bindgen]
+pub fn run_app() -> Result<(), JsValue> {
+    wasm_logger::init(wasm_logger::Config::default());
+    console_error_panic_hook::set_once();
+    yew::Renderer::<App>::new().render();
+    Ok(())
 }
 
 pub fn add(left: u64, right: u64) -> u64 {

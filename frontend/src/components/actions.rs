@@ -3,13 +3,13 @@ use serde::{Deserialize, Serialize};
 use crate::services::ApiService;
 use gloo_timers::callback::Interval;
 use crate::services::api::ApiService as ApiService;
-use crate::models::{SparkSeerStats, FeeHistory, PeerComparison, SuggestedPeer};
+use crate::models::{SparkSeerStats, FeeHistory, PeerComparison, SuggestedPeer, Recommendation};
 use web_sys::HtmlCanvasElement;
 use wasm_bindgen::JsCast;
 use js_sys::Date;
 use crate::components::fee_simulator::FeeSimulator;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeHealth {
     pub total_capacity: u64,
     pub active_channels: u32,
@@ -20,7 +20,7 @@ pub struct NodeHealth {
     pub uptime_percentage: f64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActionRecommendation {
     pub priority: String,
     pub action: String,
@@ -193,45 +193,30 @@ impl Component for ActionsComponent {
     }
 }
 
-#[function_component(ActionsComponent)]
+#[function_component(Actions)]
 pub fn actions(props: &ActionsProps) -> Html {
-    let stats = use_state(|| None::<SparkSeerStats>);
-    let fee_history = use_state(|| Vec::<FeeHistory>::new());
-    let peer_comparisons = use_state(|| Vec::<PeerComparison>::new());
-    let suggested_peers = use_state(|| Vec::<SuggestedPeer>::new());
+    let recommendations = use_state(|| Vec::<Recommendation>::new());
+    let loading = use_state(|| true);
     let error = use_state(|| None::<String>);
 
     {
-        let stats = stats.clone();
-        let fee_history = fee_history.clone();
-        let peer_comparisons = peer_comparisons.clone();
-        let suggested_peers = suggested_peers.clone();
+        let recommendations = recommendations.clone();
+        let loading = loading.clone();
         let error = error.clone();
         let api_service = props.api_service.clone();
 
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    // Chargement des statistiques principales
-                    match api_service.get_node_stats().await {
-                        Ok(node_stats) => {
-                            stats.set(Some(node_stats));
-                            
-                            // Chargement des données supplémentaires
-                            let fee_history_result = api_service.get_fee_history().await;
-                            let peer_comparisons_result = api_service.get_peer_comparisons().await;
-                            let suggested_peers_result = api_service.get_suggested_peers().await;
-
-                            match (fee_history_result, peer_comparisons_result, suggested_peers_result) {
-                                (Ok(fh), Ok(pc), Ok(sp)) => {
-                                    fee_history.set(fh);
-                                    peer_comparisons.set(pc);
-                                    suggested_peers.set(sp);
-                                }
-                                _ => error.set(Some("Erreur lors du chargement des données supplémentaires".to_string())),
-                            }
+                    match api_service.get_recommendations().await {
+                        Ok(data) => {
+                            recommendations.set(data);
+                            loading.set(false);
                         }
-                        Err(e) => error.set(Some(e.to_string())),
+                        Err(e) => {
+                            error.set(Some(e.as_string().unwrap_or_else(|| "Erreur inconnue".to_string())));
+                            loading.set(false);
+                        }
                     }
                 });
                 || ()
@@ -241,118 +226,37 @@ pub fn actions(props: &ActionsProps) -> Html {
     }
 
     html! {
-        <div class="space-y-6">
-            // Simulateur de frais
-            <FeeSimulator api_service={props.api_service.clone()} />
-
-            // Section des recommandations de frais
-            if let Some(node_stats) = (*stats).as_ref() {
-                <div class="bg-white shadow rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-6">{"Optimisation des Frais"}</h2>
-                    
-                    // Graphique historique des frais
-                    <div class="mb-8">
-                        <h3 class="text-lg font-semibold mb-4">{"Historique des Frais"}</h3>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <canvas id="feeHistoryChart" height="200"></canvas>
-                            {render_fee_history_chart(&fee_history)}
-                        </div>
-                    </div>
-
-                    // Comparaison avec les pairs
-                    <div class="mb-8">
-                        <h3 class="text-lg font-semibold mb-4">{"Comparaison avec des Nœuds Similaires"}</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            {"Alias"}
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            {"Capacité"}
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            {"Frais de Base"}
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            {"Taux"}
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            {"Taux de Succès"}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    {for peer_comparisons.iter().map(|peer| html! {
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {&peer.alias}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {format!("{} sats", peer.capacity)}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {format!("{} sats", peer.base_fee)}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {format!("{} ppm", peer.fee_rate)}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {format!("{:.1}%", peer.success_rate)}
-                                            </td>
-                                        </tr>
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    // Suggestions de nouveaux canaux
-                    <div>
-                        <h3 class="text-lg font-semibold mb-4">{"Suggestions de Nouveaux Canaux"}</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {for suggested_peers.iter().map(|peer| html! {
-                                <div class="bg-gray-50 rounded-lg p-4">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <h4 class="font-medium text-gray-900">{&peer.alias}</h4>
-                                            <p class="text-sm text-gray-500 mt-1">
-                                                {format!("Score: {:.1}", peer.score)}
-                                            </p>
-                                        </div>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            {format!("Capacité suggérée: {} sats", peer.suggested_capacity)}
-                                        </span>
-                                    </div>
-                                    <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
-                                        <div>
-                                            <span class="text-gray-500">{"Centralité:"}</span>
-                                            <span class="ml-1 text-gray-900">{format!("{:.2}", peer.centrality)}</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-500">{"Fiabilité:"}</span>
-                                            <span class="ml-1 text-gray-900">{format!("{:.1}%", peer.reliability)}</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-500">{"Canaux:"}</span>
-                                            <span class="ml-1 text-gray-900">{peer.channels}</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-500">{"Capacité totale:"}</span>
-                                            <span class="ml-1 text-gray-900">{format!("{} sats", peer.capacity)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            })}
-                        </div>
-                    </div>
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-2xl font-bold mb-4">{"Actions recommandées"}</h2>
+            
+            if *loading {
+                <div class="flex justify-center items-center py-8">
+                    <div class="loading-spinner"></div>
                 </div>
-            }
-
-            if let Some(err) = (*error).as_ref() {
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {format!("Erreur: {}", err)}
+            } else if let Some(error_msg) = &*error {
+                <div class="text-red-500 text-center py-4">
+                    {error_msg}
+                </div>
+            } else if recommendations.is_empty() {
+                <div class="text-gray-500 text-center py-4">
+                    {"Aucune action recommandée pour le moment."}
+                </div>
+            } else {
+                <div class="space-y-4">
+                    {for recommendations.iter().map(|rec| {
+                        let severity_class = match rec.severity {
+                            crate::models::RecommendationSeverity::High => "border-red-500 bg-red-50",
+                            crate::models::RecommendationSeverity::Medium => "border-yellow-500 bg-yellow-50",
+                            crate::models::RecommendationSeverity::Low => "border-blue-500 bg-blue-50",
+                        };
+                        
+                        html! {
+                            <div class={format!("p-4 rounded-lg border-l-4 {}", severity_class)}>
+                                <h3 class="font-semibold mb-2">{&rec.title}</h3>
+                                <p class="text-gray-600">{&rec.description}</p>
+                            </div>
+                        }
+                    })}
                 </div>
             }
         </div>

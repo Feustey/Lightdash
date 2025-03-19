@@ -1,14 +1,15 @@
 {
   "name": "lightdash-frontend",
   "version": "1.0.0",
-  "private": true,
+  "description": "Interface utilisateur pour Lightdash",
   "scripts": {
-    "build:css": "tailwindcss -i ./styles/main.css -o ./dist/styles.css --minify",
-    "watch:css": "tailwindcss -i ./styles/main.css -o ./dist/styles.css --watch"
+    "dev": "trunk serve",
+    "build": "trunk build --release",
+    "start": "trunk serve --release"
   },
-  "devDependencies": {
-    "tailwindcss": "^3.4.1",
-    "autoprefixer": "^10.4.17",
-    "postcss": "^8.4.35"
+  "dependencies": {
+    "tailwindcss": "^3.3.0",
+    "postcss": "^8.4.31",
+    "autoprefixer": "^10.4.16"
   }
 } 
