@@ -34,3 +34,28 @@ next-env.d.ts
 # Ignorer les fichiers système courants
 .DS_Store
 Thumbs.db
+.vercel
+
+# Rust
+**/*.rs.bk
+
+# Node
+node_modules/
+.npm
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel
+.now
+
+# Build
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

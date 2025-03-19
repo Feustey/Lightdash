@@ -1,0 +1,52 @@
+groups:
+  - name: lightdash_alerts
+    rules:
+      # Alerte sur le nombre d'erreurs
+      - alert: HighErrorRate
+        expr: rate(lightning_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taux d'erreur élevé"
+          description: "Le taux d'erreur est supérieur à 0.1 erreurs par seconde depuis 5 minutes"
+
+      # Alerte sur la capacité des canaux
+      - alert: LowChannelCapacity
+        expr: sum(lightning_total_capacity{type="local"}) < 1000000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Capacité des canaux faible"
+          description: "La capacité totale des canaux est inférieure à 1M sats"
+
+      # Alerte sur le nombre de canaux
+      - alert: LowChannelCount
+        expr: sum(lightning_channels{status="active"}) < 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Nombre de canaux faible"
+          description: "Le nombre de canaux actifs est inférieur à 3"
+
+      # Alerte sur la latence des requêtes
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latence élevée"
+          description: "95% des requêtes prennent plus d'une seconde"
+
+      # Alerte sur la disponibilité du service
+      - alert: ServiceDown
+        expr: up{job="lightdash"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service indisponible"
+          description: "Le service Lightdash est indisponible" 

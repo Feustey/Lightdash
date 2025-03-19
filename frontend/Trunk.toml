@@ -1,0 +1,24 @@
+[build]
+target = "index.html"
+dist = "dist"
+public_url = "/"
+filehash = true
+
+[watch]
+ignore = ["dist/**/*"]
+
+[serve]
+port = 8080
+open = false
+
+[clean]
+dist = "dist"
+
+[tools]
+wasm-bindgen = "0.2.89"
+
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = 'abort' 
