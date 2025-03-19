@@ -11,20 +11,19 @@ RUN apt-get update && apt-get install -y \
 
 # Installation de wasm-pack et trunk
 RUN rustup target add wasm32-unknown-unknown \
-    && cargo install trunk --version 0.17.5
+    && cargo install trunk --version 0.17.5 --locked
 
 # Configuration du répertoire de travail
 WORKDIR /app
 
 # Copie des fichiers du projet
-COPY . .
+COPY frontend/ ./
 
-# Installation des dépendances npm
-RUN cd frontend && npm install
+# Installation des dépendances et build
+RUN npm install && \
+    trunk build --release
 
-# Build du projet
-RUN cd frontend && ./build.sh
-
-# Image finale
+# Image finale avec Nginx
 FROM nginx:alpine
-COPY --from=builder /app/frontend/dist /usr/share/nginx/html 
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf 
