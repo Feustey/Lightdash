@@ -10,6 +10,7 @@ CACHEDIR.TAG
 # Build
 /dist/
 /build/
+/out/
 *.wasm
 
 # IDE
@@ -22,6 +23,9 @@ CACHEDIR.TAG
 .env
 .env.local
 .env.*.local
+.env.development
+.env.test
+.env.production
 
 # System
 .DS_Store
@@ -29,6 +33,9 @@ Thumbs.db
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Docker
 .docker/
@@ -39,3 +46,22 @@ docker-compose.override.yml
 *.tmp
 *.temp
 .vercel
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.csr
+*.srl
+*.p12
+*.pfx
+
+# Node.js (si des outils Node.js sont utilisés)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Cache
+.cache/
+.npm/
+.yarn/
