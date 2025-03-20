@@ -12,7 +12,7 @@
   ],
   "buildCommand": "chmod +x build.sh && ./build.sh",
   "outputDirectory": "frontend/dist",
-  "framework": "static",
+  "framework": "react-router",
   "rewrites": [
     {
       "source": "/(.*)",
