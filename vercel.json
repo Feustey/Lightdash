@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/Cargo.toml",
+      "use": "@vercel/rust"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ],
+  "env": {
+    "SPARKSEER_API_KEY": "@sparkseer-api-key",
+    "NODE_PUBKEY": "@node-pubkey",
+    "API_URL": "@api-url",
+    "ML_URL": "@ml-url"
+  }
+} 

@@ -23,25 +23,19 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
       
-      - name: Install Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      
       - name: Install Dependencies
         run: |
-          npm install --global vercel@latest
-          cd frontend && npm install
           cargo install --locked trunk
-      
-      - name: Build Tailwind CSS
-        run: cd frontend && npm run build:css
+          cargo install --locked wasm-bindgen-cli
       
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       
       - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          cd frontend
+          trunk build --release
+          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
       
       - name: Deploy Project Artifacts to Vercel
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
