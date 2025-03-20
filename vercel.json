@@ -19,11 +19,5 @@
       "src": "/(.*)",
       "dest": "/static/index.html"
     }
-  ],
-  "env": {
-    "SPARKSEER_API_KEY": "@sparkseer-api-key",
-    "NODE_PUBKEY": "@node-pubkey",
-    "API_URL": "@api-url",
-    "ML_URL": "@ml-url"
-  }
+  ]
 } 
