@@ -2,24 +2,21 @@
   "version": 2,
   "builds": [
     {
-      "src": "frontend/Cargo.toml",
-      "use": "@vercel/rust",
+      "src": "frontend/build.sh",
+      "use": "@vercel/static-build",
       "config": {
-        "buildCommand": "cd frontend && trunk build --release",
-        "outputDirectory": "frontend/dist",
-        "rustcFlags": "--target wasm32-unknown-unknown",
-        "installCommand": "cargo install --locked trunk wasm-bindgen-cli"
+        "distDir": "static"
       }
     }
   ],
   "routes": [
     {
       "src": "/assets/(.*)",
-      "dest": "/frontend/dist/assets/$1"
+      "dest": "/static/assets/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/dist/index.html"
+      "dest": "/static/index.html"
     }
   ],
   "env": {
