@@ -68,9 +68,9 @@ pub async fn run_server() -> std::io::Result<()> {
     let tera = Arc::new(tera);
 
     // Configuration des services externes
-    let sparkseer_url = env::var("NEXT_PUBLIC_API_URL")
+    let sparkseer_url = env::var("API_URL")
         .unwrap_or_else(|_| "https://api.sparkseer.space".to_string());
-    let ml_url = env::var("NEXT_PUBLIC_1ML_URL")
+    let ml_url = env::var("ML_URL")
         .unwrap_or_else(|_| "https://1ml.com".to_string());
     tracing::info!(sparkseer_url = %sparkseer_url, ml_url = %ml_url, "URLs des services externes configurées");
 

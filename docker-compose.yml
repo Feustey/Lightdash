@@ -38,4 +38,16 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
     depends_on:
-      - prometheus 
+      - prometheus
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/app/frontend
+    environment:
+      - RUST_LOG=info
+    restart: unless-stopped 

@@ -3,25 +3,9 @@ target = "index.html"
 dist = "dist"
 
 [watch]
-watch = ["src", "styles", "static"]
+watch = ["src", "index.html", "styles.css"]
 
 [serve]
-address = "0.0.0.0"
-port = 3000
-
-[clean]
-dist = "dist"
-
-[tools]
-wasm-bindgen = "0.2.89"
-
-[profile.release]
-opt-level = 'z'
-lto = true
-codegen-units = 1
-panic = 'abort'
-
-[[hooks]]
-stage = "pre_build"
-command = "npx"
-command_arguments = ["tailwindcss", "-i", "./styles/main.css", "-o", "./dist/main.css"] 
+address = "127.0.0.1"
+port = 8080
+open = true 

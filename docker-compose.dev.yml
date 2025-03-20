@@ -3,19 +3,19 @@ version: '3.8'
 services:
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile.dev
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "8080:80"
     volumes:
-      - ./frontend:/app/frontend
-      - cargo-cache:/usr/local/cargo/registry
-      - target-cache:/app/frontend/target
+      - ./frontend:/app
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3000
-      - NEXT_PUBLIC_SPARKSEER_API_KEY=${NEXT_PUBLIC_SPARKSEER_API_KEY}
-      - NEXT_PUBLIC_NODE_PUBKEY=${NEXT_PUBLIC_NODE_PUBKEY}
-    command: sh -c "cd frontend && trunk serve --address 0.0.0.0 --port 3000"
+      - RUST_LOG=debug
+      - SPARKSEER_API_KEY=${SPARKSEER_API_KEY}
+      - NODE_PUBKEY=${NODE_PUBKEY}
+      - API_URL=${API_URL}
+      - ML_URL=${ML_URL}
+    restart: unless-stopped
 
 volumes:
   cargo-cache:

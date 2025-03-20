@@ -1,29 +1,44 @@
-FROM rust:1.81-slim as builder
+FROM rust:1.81 as builder
 
 # Installation des dépendances système
 RUN apt-get update && apt-get install -y \
-    curl \
-    build-essential \
+    git \
     pkg-config \
-    nodejs \
-    npm \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Installation de wasm-pack et trunk
-RUN rustup target add wasm32-unknown-unknown \
-    && cargo install trunk --version 0.17.5 --locked
+# Installation de trunk
+RUN cargo install trunk
 
-# Configuration du répertoire de travail
+# Installation des dépendances wasm
+RUN rustup target add wasm32-unknown-unknown
+
 WORKDIR /app
 
-# Copie des fichiers du projet
-COPY frontend/ ./
+# Copie du Cargo.toml du workspace root
+COPY ../Cargo.toml /app/Cargo.toml
 
-# Installation des dépendances et build
-RUN npm install && \
-    trunk build --release --target wasm32-unknown-unknown
+# Copie du Cargo.toml du frontend
+COPY Cargo.toml /app/frontend/Cargo.toml
 
-# Image finale avec Nginx
+# Création du dossier frontend
+RUN mkdir -p /app/frontend
+
+# Copie des fichiers du projet frontend
+COPY . /app/frontend/
+
+# Compilation de l'application
+RUN cd frontend && trunk build --release
+
+# Image finale
 FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf 
+
+# Copie des fichiers compilés
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+
+# Configuration nginx
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"] 
