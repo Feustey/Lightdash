@@ -8,7 +8,6 @@ cargo install --locked trunk
 cargo install --locked wasm-bindgen-cli
 
 # Build du projet
-cd frontend
 trunk build --release
 
 # Copie des fichiers dans le répertoire de sortie
