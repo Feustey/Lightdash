@@ -1,4 +1,10 @@
-**/target
-**/Cargo.lock
+.git
+node_modules
+target
+**/*.rs.bk
+Cargo.lock
+.env
+.env.local
+.env.*.local
 frontend/dist
 frontend/node_modules 

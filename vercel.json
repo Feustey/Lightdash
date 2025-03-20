@@ -10,6 +10,13 @@
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/frontend/index.html" }
   ],
-  "buildCommand": "cd frontend && trunk build --release",
-  "outputDirectory": "frontend/dist"
+  "buildCommand": "chmod +x build.sh && ./build.sh",
+  "outputDirectory": "frontend/dist",
+  "framework": "static",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 } 
