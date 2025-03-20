@@ -1,4 +1,5 @@
 use yew::prelude::*;
+use crate::pages::{DashboardPage, ChannelsPage, ActionsPage, RecommendationsPage, YieldsPage};
 
 pub mod chart;
 
@@ -8,23 +9,44 @@ pub struct NavbarProps {
 }
 
 #[function_component(Navbar)]
-pub fn navbar(props: &NavbarProps) -> Html {
+pub fn navbar() -> Html {
+    let current_page = use_state(|| "dashboard".to_string());
+    let is_mobile_menu_open = use_state(|| false);
+
+    let toggle_mobile_menu = {
+        let is_mobile_menu_open = is_mobile_menu_open.clone();
+        Callback::from(move |_| {
+            is_mobile_menu_open.set(!*is_mobile_menu_open);
+        })
+    };
+
     html! {
         <nav class="navbar">
             <div class="navbar-brand">
                 <h1>{"Lightdash"}</h1>
             </div>
-            <div class="navbar-menu">
-                <a href="/" class={if props.current_page == "dashboard" { "active" } else { "" }}>
-                    {"Tableaux de bord"}
+            <button class="mobile-menu-button" onclick={toggle_mobile_menu}>
+                <span class={if *is_mobile_menu_open { "open" } else { "" }}></span>
+                <span class={if *is_mobile_menu_open { "open" } else { "" }}></span>
+                <span class={if *is_mobile_menu_open { "open" } else { "" }}></span>
+            </button>
+            <div class={classes!(
+                "navbar-links",
+                if *is_mobile_menu_open { "open" } else { "" }
+            )}>
+                <a href="/" class={if *current_page == "dashboard" { "active" } else { "" }}>
+                    {"Tableau de bord"}
                 </a>
-                <a href="/channels" class={if props.current_page == "channels" { "active" } else { "" }}>
+                <a href="/channels" class={if *current_page == "channels" { "active" } else { "" }}>
                     {"Canaux"}
                 </a>
-                <a href="/actions" class={if props.current_page == "actions" { "active" } else { "" }}>
+                <a href="/yields" class={if *current_page == "yields" { "active" } else { "" }}>
+                    {"Rendements"}
+                </a>
+                <a href="/actions" class={if *current_page == "actions" { "active" } else { "" }}>
                     {"Actions"}
                 </a>
-                <a href="/recommendations" class={if props.current_page == "recommendations" { "active" } else { "" }}>
+                <a href="/recommendations" class={if *current_page == "recommendations" { "active" } else { "" }}>
                     {"Recommandations"}
                 </a>
             </div>

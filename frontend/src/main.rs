@@ -1,9 +1,10 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::pages::{DashboardPage, ChannelsPage, ActionsPage, RecommendationsPage};
+use pages::{DashboardPage, ChannelsPage, ActionsPage, RecommendationsPage, YieldsPage};
 
-mod components;
 mod pages;
+mod components;
+mod services;
 mod types;
 
 #[derive(Clone, Routable, PartialEq)]
@@ -12,18 +13,21 @@ enum Route {
     Dashboard,
     #[at("/channels")]
     Channels,
-    #[at("/actions")]
-    Actions,
+    #[at("/yields")]
+    Yields,
     #[at("/recommendations")]
     Recommendations,
+    #[at("/actions")]
+    Actions,
 }
 
-fn switch(route: Route) -> Html {
-    match route {
+fn switch(routes: Route) -> Html {
+    match routes {
         Route::Dashboard => html! { <DashboardPage /> },
         Route::Channels => html! { <ChannelsPage /> },
-        Route::Actions => html! { <ActionsPage /> },
+        Route::Yields => html! { <YieldsPage /> },
         Route::Recommendations => html! { <RecommendationsPage /> },
+        Route::Actions => html! { <ActionsPage /> },
     }
 }
 
