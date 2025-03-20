@@ -1,11 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
   <head>
-    <meta charset="utf-8" />
-    <title>Lightdash</title>
-    <link data-trunk rel="css" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0b0d">
+    <meta name="description" content="Lightdash - La plateforme intelligente de gestion de nœud Lightning Network. Optimisez vos rendements et gérez vos canaux efficacement avec l'aide de l'IA.">
+    <meta name="keywords" content="lightning network, bitcoin, node management, crypto, blockchain, AI optimization">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://lightdash.app/">
+    <meta property="og:title" content="Lightdash - Gestion Intelligente de Nœud Lightning">
+    <meta property="og:description" content="Optimisez votre nœud Lightning Network avec l'aide de l'intelligence artificielle. Maximisez vos rendements et gérez vos canaux efficacement.">
+    <meta property="og:image" content="https://lightdash.app/images/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://lightdash.app/">
+    <meta name="twitter:title" content="Lightdash - Gestion Intelligente de Nœud Lightning">
+    <meta name="twitter:description" content="Optimisez votre nœud Lightning Network avec l'aide de l'intelligence artificielle. Maximisez vos rendements et gérez vos canaux efficacement.">
+    <meta name="twitter:image" content="https://lightdash.app/images/twitter-card.jpg">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://api.sparkseer.space">
+    <link rel="preconnect" href="https://relay.getalby.com">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://lightdash.app/">
+
+    <title>Lightdash - Gestion Intelligente de Nœud Lightning</title>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Lightdash",
+        "description": "Plateforme de gestion intelligente de nœud Lightning Network",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "BTC"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "Lightdash",
+            "url": "https://lightdash.app"
+        }
+    }
+    </script>
+
+    <style>
+        /* Styles de chargement initial */
+        .loading-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #0a0b0d;
+            color: #ffffff;
+        }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+        <div class="loading-screen">
+            <h1>Chargement de Lightdash...</h1>
+        </div>
+    </div>
+    <noscript>
+        <div style="text-align: center; padding: 2rem;">
+            <h1>JavaScript est nécessaire</h1>
+            <p>Veuillez activer JavaScript pour utiliser Lightdash.</p>
+        </div>
+    </noscript>
   </body>
 </html> 

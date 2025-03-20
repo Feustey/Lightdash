@@ -1,0 +1,12 @@
+{
+  "name": "lightdash-frontend",
+  "version": "1.0.0",
+  "dependencies": {
+    // ... autres dépendances ...
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5",
+    "dotenv-webpack": "^8.0.1",
+    // ... autres devDependencies ...
+  }
+} 

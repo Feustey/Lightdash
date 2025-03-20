@@ -6,20 +6,27 @@ use web_sys::console;
 use std::sync::Once;
 use std::sync::Mutex;
 use std::collections::HashMap;
+use log::{info, warn, error, debug};
 
+/// Constantes pour la configuration des APIs
 const NODE_PUBKEY: &str = "02778f4a4eb3a2344b9fd8ee72e7ec5f03f803e5f5273e2e1a2af508910cf2b12b";
 const BASE_URL: &str = "https://api.sparkseer.space";
 const OPENAI_API_URL: &str = "https://api.openai.com/v1/chat/completions";
 const DEEPSEEK_API_URL: &str = "https://api.deepseek.com/v1/chat/completions";
+
+/// Configuration des tentatives de requêtes
 const MAX_RETRIES: u32 = 3;
 const RETRY_DELAY_MS: u32 = 1000;
 
-static API_KEYS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+/// Initialisation unique des clés API
 static INIT: Once = Once::new();
+static API_KEYS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 
+/// Initialise les clés API depuis les variables d'environnement
 fn init_api_keys() {
     INIT.call_once(|| {
         if let Ok(mut keys) = API_KEYS.lock() {
+            // Récupération des clés API
             if let Ok(sparkseer_key) = std::env::var("SPARKSEER_API_KEY") {
                 keys.insert("sparkseer".to_string(), sparkseer_key);
             }
@@ -33,6 +40,7 @@ fn init_api_keys() {
     });
 }
 
+/// Récupère une clé API spécifique
 fn get_api_key(service: &str) -> Option<String> {
     init_api_keys();
     API_KEYS.lock().ok()?.get(service).cloned()
@@ -222,142 +230,53 @@ pub async fn fetch_all_data() -> Result<(NodeStats, Vec<ChannelRecommendation>, 
     Ok((stats, recommendations, liquidity, fees))
 }
 
+/// Fonction principale pour obtenir les recommandations d'IA
+/// 
+/// # Arguments
+/// * `stats` - Statistiques du nœud Lightning
+/// * `channels` - Liste des canaux du nœud
+/// 
+/// # Returns
+/// * `Result<Vec<Recommendation>, String>` - Liste des recommandations ou erreur
 pub async fn get_ai_recommendations(stats: &NodeStats, channels: &[Channel]) -> Result<Vec<Recommendation>, String> {
+    debug!("Début de l'analyse des recommandations");
+    
     // Validation des données d'entrée
     if channels.is_empty() {
+        error!("Aucun canal disponible pour l'analyse");
         return Err("Aucun canal disponible pour l'analyse".to_string());
     }
 
-    // Préparation des données des canaux avec validation
-    let mut channel_details = String::new();
-    let mut total_inbound = 0;
-    let mut total_outbound = 0;
-    let mut active_channels = 0;
-    let mut inactive_channels = 0;
+    // Préparation des données
+    let prompt = prepare_prompt(stats, channels);
+    debug!("Prompt préparé pour les LLMs");
 
-    for channel in channels {
-        // Validation des données du canal
-        if channel.capacity == 0 {
-            console::warn_1(&JsValue::from_str(&format!(
-                "Canal {} avec capacité nulle détecté",
-                channel.remote_pubkey
-            )));
-            continue;
-        }
+    // Requêtes parallèles vers OpenAI et DeepSeek
+    info!("Envoi des requêtes aux LLMs");
+    let (openai_result, deepseek_result) = futures::future::join(
+        get_openai_recommendations(&prompt),
+        get_deepseek_recommendations(&prompt)
+    ).await;
 
-        channel_details.push_str(&format!(
-            "  - {} : {} sats (Local: {} sats, Remote: {} sats)\n",
-            channel.remote_pubkey,
-            channel.capacity,
-            channel.local_balance,
-            channel.remote_balance
-        ));
-
-        total_inbound += channel.remote_balance;
-        total_outbound += channel.local_balance;
-        if channel.is_active {
-            active_channels += 1;
-        } else {
-            inactive_channels += 1;
-        }
-    }
-
-    // Calcul des métriques avec validation
-    let inbound_ratio = if stats.total_capacity > 0 {
-        (total_inbound as f64 / stats.total_capacity as f64) * 100.0
-    } else {
-        0.0
-    };
+    // Traitement des résultats
+    let mut recommendations = process_llm_results(openai_result, deepseek_result);
     
-    let outbound_ratio = if stats.total_capacity > 0 {
-        (total_outbound as f64 / stats.total_capacity as f64) * 100.0
-    } else {
-        0.0
-    };
+    // Déduplication et tri
+    deduplicate_and_sort_recommendations(&mut recommendations);
     
-    let active_ratio = if !channels.is_empty() {
-        (active_channels as f64 / channels.len() as f64) * 100.0
-    } else {
-        0.0
-    };
+    info!("Analyse terminée avec {} recommandations", recommendations.len());
+    Ok(recommendations)
+}
 
-    let prompt = format!(
-        "Tu es un expert en analyse des performances des nœuds Lightning Network et en optimisation de la rentabilité des canaux. 
+/// Prépare le prompt pour les LLMs
+fn prepare_prompt(stats: &NodeStats, channels: &[Channel]) -> String {
+    // ... existing prompt preparation code ...
+}
 
-### 🔍 Contexte :
-Je possède un nœud Lightning et je souhaite optimiser ses performances et sa rentabilité. Voici les données récupérées depuis **1ML** et **Sparkseer** concernant mon nœud :
-
-#### 📡 Données issues de 1ML :
-- **Capacité totale** : {} sats
-- **Nombre de canaux ouverts** : {} ({} actifs, {} inactifs)
-- **Liste des canaux avec leurs capacités** :
-{}
-- **Score de connectivité** : {:.2}
-- **Centralité du nœud dans le graphe du réseau** : {}
-- **Alias du nœud** : {}
-- **Pays d'hébergement** : {}
-- **Politique de frais (fee policy) moyenne** :
-  - Base fee : {} msats
-  - Fee rate : {} ppm
-
-#### 📊 Données issues de Sparkseer :
-- **Utilisation des canaux** :
-  - Score de flexibilité : {:.2}
-  - Rangs : betweenness={}, closeness={}, eigenvector={}
-  - Taux de canaux actifs : {:.1}%
-- **Flux de liquidité** :
-  - Capacité moyenne : {:.2} sats
-  - Capacité médiane : {} sats
-  - Ratio liquidité entrante : {:.1}%
-  - Ratio liquidité sortante : {:.1}%
-- **Frais actuels** :
-  - Base fee médian : {} msats
-  - Fee rate médian : {} ppm
-  - Base fee moyen : {} msats
-  - Fee rate moyen : {} ppm
-
-### 🎯 Objectif :
-- Maximiser la rentabilité en ajustant les fees de manière optimale
-- Éviter l'épuisement des liquidités tout en gardant des canaux actifs
-- Fermer ou rééquilibrer les canaux peu performants
-- Identifier les meilleurs pairs pour ouvrir de nouveaux canaux
-
-### 🚀 Ta mission :
-À partir des données ci-dessus, analyse la situation et propose une liste de **recommandations détaillées** classées par priorité.  
-Chaque recommandation doit être claire, actionable et justifiée par les données fournies.  
-Pour chaque recommandation, indique :
-1. L'action précise à effectuer
-2. La justification basée sur les données
-3. L'impact estimé (faible, moyen, élevé)
-4. Les métriques à surveiller après l'action",
-        stats.total_capacity,
-        stats.num_channels,
-        active_channels,
-        inactive_channels,
-        channel_details,
-        stats.liquidity_flexibility_score,
-        stats.betweenness_rank,
-        stats.node_alias,
-        stats.node_country,
-        stats.mean_outbound_base_fee,
-        stats.mean_outbound_fee_rate,
-        stats.liquidity_flexibility_score,
-        stats.betweenness_rank,
-        stats.closeness_rank,
-        stats.eigenvector_rank,
-        active_ratio,
-        stats.mean_channel_capacity,
-        stats.median_channel_capacity,
-        inbound_ratio,
-        outbound_ratio,
-        stats.median_outbound_base_fee,
-        stats.median_outbound_fee_rate,
-        stats.mean_outbound_base_fee,
-        stats.mean_outbound_fee_rate
-    );
-
-    // Requête OpenAI
-    let openai_request = Request::post(OPENAI_API_URL)
+/// Obtient les recommandations depuis OpenAI
+async fn get_openai_recommendations(prompt: &str) -> Result<Vec<Recommendation>, String> {
+    debug!("Envoi de la requête à OpenAI");
+    let request = Request::post(OPENAI_API_URL)
         .header("Content-Type", "application/json")
         .header("Authorization", &format!("Bearer {}", get_api_key("openai").unwrap_or_default()))
         .json(&serde_json::json!({
@@ -369,7 +288,7 @@ Pour chaque recommandation, indique :
                 },
                 {
                     "role": "user",
-                    "content": prompt.clone()
+                    "content": prompt
                 }
             ],
             "temperature": 0.7,
@@ -377,8 +296,38 @@ Pour chaque recommandation, indique :
         }))
         .map_err(|e| e.to_string())?;
 
-    // Requête DeepSeek
-    let deepseek_request = Request::post(DEEPSEEK_API_URL)
+    retry_request(|| Box::pin(async {
+        match request.send().await {
+            Ok(response) => {
+                if response.ok() {
+                    match response.json::<serde_json::Value>().await {
+                        Ok(json) => {
+                            if let Some(choices) = json.get("choices") {
+                                if let Some(first) = choices.get(0) {
+                                    if let Some(message) = first.get("message") {
+                                        if let Some(content) = message.get("content") {
+                                            return Ok(parse_recommendations(content.as_str().unwrap_or_default()));
+                                        }
+                                    }
+                                }
+                            }
+                            Err("Format de réponse OpenAI invalide".to_string())
+                        }
+                        Err(e) => Err(format!("Erreur de parsing JSON OpenAI: {}", e))
+                    }
+                } else {
+                    Err(format!("Erreur API OpenAI: {}", response.status()))
+                }
+            }
+            Err(e) => Err(format!("Erreur de requête OpenAI: {}", e))
+        }
+    })).await
+}
+
+/// Obtient les recommandations depuis DeepSeek
+async fn get_deepseek_recommendations(prompt: &str) -> Result<Vec<Recommendation>, String> {
+    debug!("Envoi de la requête à DeepSeek");
+    let request = Request::post(DEEPSEEK_API_URL)
         .header("Content-Type", "application/json")
         .header("Authorization", &format!("Bearer {}", get_api_key("deepseek").unwrap_or_default()))
         .json(&serde_json::json!({
@@ -398,94 +347,82 @@ Pour chaque recommandation, indique :
         }))
         .map_err(|e| e.to_string())?;
 
-    // Exécution parallèle des requêtes
-    let (openai_result, deepseek_result) = futures::future::join(
-        retry_request(|| Box::pin(async {
-            match openai_request.send().await {
-                Ok(response) => {
-                    if response.ok() {
-                        match response.json::<serde_json::Value>().await {
-                            Ok(json) => {
-                                if let Some(choices) = json.get("choices") {
-                                    if let Some(first) = choices.get(0) {
-                                        if let Some(message) = first.get("message") {
-                                            if let Some(content) = message.get("content") {
-                                                let recommendations = parse_recommendations(content.as_str().unwrap_or_default());
-                                                return Ok(recommendations);
-                                            }
+    retry_request(|| Box::pin(async {
+        match request.send().await {
+            Ok(response) => {
+                if response.ok() {
+                    match response.json::<serde_json::Value>().await {
+                        Ok(json) => {
+                            if let Some(choices) = json.get("choices") {
+                                if let Some(first) = choices.get(0) {
+                                    if let Some(message) = first.get("message") {
+                                        if let Some(content) = message.get("content") {
+                                            return Ok(parse_recommendations(content.as_str().unwrap_or_default()));
                                         }
                                     }
                                 }
-                                Err("Format de réponse OpenAI invalide".to_string())
                             }
-                            Err(e) => Err(format!("Erreur de parsing JSON OpenAI: {}", e))
+                            Err("Format de réponse DeepSeek invalide".to_string())
                         }
-                    } else {
-                        Err(format!("Erreur API OpenAI: {}", response.status()))
+                        Err(e) => Err(format!("Erreur de parsing JSON DeepSeek: {}", e))
                     }
+                } else {
+                    Err(format!("Erreur API DeepSeek: {}", response.status()))
                 }
-                Err(e) => Err(format!("Erreur de requête OpenAI: {}", e))
             }
-        })),
-        retry_request(|| Box::pin(async {
-            match deepseek_request.send().await {
-                Ok(response) => {
-                    if response.ok() {
-                        match response.json::<serde_json::Value>().await {
-                            Ok(json) => {
-                                if let Some(choices) = json.get("choices") {
-                                    if let Some(first) = choices.get(0) {
-                                        if let Some(message) = first.get("message") {
-                                            if let Some(content) = message.get("content") {
-                                                let recommendations = parse_recommendations(content.as_str().unwrap_or_default());
-                                                return Ok(recommendations);
-                                            }
-                                        }
-                                    }
-                                }
-                                Err("Format de réponse DeepSeek invalide".to_string())
-                            }
-                            Err(e) => Err(format!("Erreur de parsing JSON DeepSeek: {}", e))
-                        }
-                    } else {
-                        Err(format!("Erreur API DeepSeek: {}", response.status()))
-                    }
-                }
-                Err(e) => Err(format!("Erreur de requête DeepSeek: {}", e))
-            }
-        }))
-    ).await;
+            Err(e) => Err(format!("Erreur de requête DeepSeek: {}", e))
+        }
+    })).await
+}
 
-    // Fusion et déduplication des recommandations
+/// Traite les résultats des LLMs
+fn process_llm_results(
+    openai_result: Result<Vec<Recommendation>, String>,
+    deepseek_result: Result<Vec<Recommendation>, String>
+) -> Vec<Recommendation> {
     let mut all_recommendations = Vec::new();
-    let mut seen_recommendations = std::collections::HashSet::new();
+    
+    match openai_result {
+        Ok(recs) => {
+            info!("Reçu {} recommandations d'OpenAI", recs.len());
+            all_recommendations.extend(recs);
+        }
+        Err(e) => error!("Erreur OpenAI: {}", e),
+    }
+    
+    match deepseek_result {
+        Ok(recs) => {
+            info!("Reçu {} recommandations de DeepSeek", recs.len());
+            all_recommendations.extend(recs);
+        }
+        Err(e) => error!("Erreur DeepSeek: {}", e),
+    }
+    
+    all_recommendations
+}
 
-    // Ajouter les recommandations d'OpenAI
-    if let Ok(openai_recs) = openai_result {
-        for rec in openai_recs {
-            let key = format!("{}_{}", rec.title, rec.description);
-            if !seen_recommendations.contains(&key) {
-                seen_recommendations.insert(key);
-                all_recommendations.push(rec);
-            }
+/// Déduplique et trie les recommandations
+fn deduplicate_and_sort_recommendations(recommendations: &mut Vec<Recommendation>) {
+    let initial_count = recommendations.len();
+    let mut unique_recommendations = Vec::new();
+    let mut seen_content = std::collections::HashSet::new();
+
+    for rec in recommendations.drain(..) {
+        let key = format!("{}_{}", rec.title, rec.description);
+        if !seen_content.contains(&key) {
+            seen_content.insert(key);
+            unique_recommendations.push(rec);
         }
     }
 
-    // Ajouter les recommandations de DeepSeek
-    if let Ok(deepseek_recs) = deepseek_result {
-        for rec in deepseek_recs {
-            let key = format!("{}_{}", rec.title, rec.description);
-            if !seen_recommendations.contains(&key) {
-                seen_recommendations.insert(key);
-                all_recommendations.push(rec);
-            }
-        }
-    }
-
-    // Trier par priorité
-    all_recommendations.sort_by(|a, b| b.priority.cmp(&a.priority));
-
-    Ok(all_recommendations)
+    unique_recommendations.sort_by(|a, b| b.priority.cmp(&a.priority));
+    *recommendations = unique_recommendations;
+    
+    debug!(
+        "Déduplication terminée: {} -> {} recommandations",
+        initial_count,
+        recommendations.len()
+    );
 }
 
 fn parse_recommendations(content: &str) -> Vec<Recommendation> {

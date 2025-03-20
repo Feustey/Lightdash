@@ -1,0 +1,4 @@
+**/target
+**/Cargo.lock
+frontend/dist
+frontend/node_modules 

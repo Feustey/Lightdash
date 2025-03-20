@@ -1,6 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use pages::{DashboardPage, ChannelsPage, ActionsPage, RecommendationsPage, YieldsPage};
+use pages::{DashboardPage, ChannelsPage, ActionsPage, RecommendationsPage, YieldsPage, AlbyPage};
 
 mod pages;
 mod components;
@@ -13,21 +13,24 @@ enum Route {
     Dashboard,
     #[at("/channels")]
     Channels,
-    #[at("/yields")]
-    Yields,
-    #[at("/recommendations")]
-    Recommendations,
     #[at("/actions")]
     Actions,
+    #[at("/recommendations")]
+    Recommendations,
+    #[at("/yields")]
+    Yields,
+    #[at("/alby")]
+    Alby,
 }
 
-fn switch(routes: Route) -> Html {
-    match routes {
+fn switch(route: Route) -> Html {
+    match route {
         Route::Dashboard => html! { <DashboardPage /> },
         Route::Channels => html! { <ChannelsPage /> },
-        Route::Yields => html! { <YieldsPage /> },
-        Route::Recommendations => html! { <RecommendationsPage /> },
         Route::Actions => html! { <ActionsPage /> },
+        Route::Recommendations => html! { <RecommendationsPage /> },
+        Route::Yields => html! { <YieldsPage /> },
+        Route::Alby => html! { <AlbyPage /> },
     }
 }
 
