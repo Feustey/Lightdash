@@ -6,7 +6,8 @@
       "use": "@vercel/rust",
       "config": {
         "buildCommand": "cd frontend && trunk build --release",
-        "outputDirectory": "frontend/dist"
+        "outputDirectory": "frontend/dist",
+        "rustcFlags": "--target wasm32-unknown-unknown"
       }
     }
   ],
