@@ -23,10 +23,23 @@ async fn main() -> Result<(), Error> {
 }
 
 pub async fn func(event: Request) -> Result<Response<Body>, Error> {
+    // Ajout des headers CORS
+    let mut response = Response::builder()
+        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        .header("Access-Control-Allow-Headers", "Content-Type");
+
+    // Gestion des requêtes OPTIONS (CORS preflight)
+    if event.method() == http::Method::OPTIONS {
+        return Ok(response
+            .status(200)
+            .body(Body::Empty)?);
+    }
+
     let query = event.query_string_parameters().first("q").unwrap_or("");
 
     if query.is_empty() {
-        return Ok(Response::builder()
+        return Ok(response
             .status(400)
             .header("content-type", "application/json")
             .body(Body::from(
@@ -49,12 +62,12 @@ pub async fn func(event: Request) -> Result<Response<Body>, Error> {
             let status = response.status();
             if status.is_success() {
                 let nodes: Vec<NodeInfo> = response.json().await?;
-                Ok(Response::builder()
+                Ok(response
                     .status(200)
                     .header("content-type", "application/json")
                     .body(Body::from(serde_json::to_string(&nodes)?))?)
             } else {
-                Ok(Response::builder()
+                Ok(response
                     .status(status.as_u16())
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -65,7 +78,7 @@ pub async fn func(event: Request) -> Result<Response<Body>, Error> {
                     ))?)
             }
         }
-        Err(e) => Ok(Response::builder()
+        Err(e) => Ok(response
             .status(500)
             .header("content-type", "application/json")
             .body(Body::from(
@@ -102,5 +115,18 @@ mod tests {
         
         let response = func(request).await.unwrap();
         assert_eq!(response.status(), 200);
+    }
+
+    #[tokio::test]
+    async fn test_func_cors_preflight() {
+        let request = Request::builder()
+            .method(http::Method::OPTIONS)
+            .uri("https://api.example.com/search")
+            .body(Body::Empty)
+            .unwrap();
+        
+        let response = func(request).await.unwrap();
+        assert_eq!(response.status(), 200);
+        assert!(response.headers().contains_key("Access-Control-Allow-Origin"));
     }
 } 

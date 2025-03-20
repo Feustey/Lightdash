@@ -13,6 +13,22 @@ pub struct NodeInfo {
     pub active_channels: u32,
 }
 
+fn get_api_base_url() -> String {
+    let host = web_sys::window()
+        .unwrap()
+        .location()
+        .hostname()
+        .unwrap();
+    
+    if host.contains("preprod-lightdash") {
+        "https://preprod-lightdash.vercel.app/api".to_string()
+    } else if host.contains("localhost") {
+        "http://localhost:3000/api".to_string()
+    } else {
+        "https://lightdash.vercel.app/api".to_string()
+    }
+}
+
 pub async fn search_node(query: &str) -> Result<Vec<NodeInfo>, String> {
     let start = Instant::now();
     
@@ -31,7 +47,7 @@ pub async fn search_node(query: &str) -> Result<Vec<NodeInfo>, String> {
         }
     } else {
         // Sinon, on fait une recherche par alias
-        let url = format!("https://1ml.com/node/search?q={}", query);
+        let url = format!("{}/search?q={}", get_api_base_url(), query);
         log_api_call!("GET", &url);
         
         let result = Request::get(&url)
@@ -56,7 +72,7 @@ pub async fn search_node(query: &str) -> Result<Vec<NodeInfo>, String> {
 
 pub async fn get_node_info(pubkey: &str) -> Result<NodeInfo, String> {
     let start = Instant::now();
-    let url = format!("https://1ml.com/node/{}/json", pubkey);
+    let url = format!("{}/node/{}", get_api_base_url(), pubkey);
     log_api_call!("GET", &url);
     
     let result = Request::get(&url)
