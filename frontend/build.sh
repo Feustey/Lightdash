@@ -18,17 +18,28 @@ install() {
     # Verify Rust version
     echo "Verifying Rust version..."
     rustc --version
+
+    # Install and verify trunk
+    echo "Installing trunk..."
+    cargo install trunk
+    echo "Verifying trunk installation..."
+    which trunk
+    trunk --version
 }
 
 # Fonction de build
 build() {
-    # Install trunk if not already installed
-    if ! command -v trunk &> /dev/null; then
+    # Ensure PATH includes cargo bin
+    export PATH=$HOME/.cargo/bin:$PATH
+
+    # Verify trunk is available
+    if ! which trunk &> /dev/null; then
+        echo "Trunk not found in PATH. Installing..."
         cargo install trunk
     fi
 
     # Build the project
-    $HOME/.cargo/bin/trunk build --release
+    trunk build --release
 
     # Check the output directory
     echo "Checking build output directory..."
