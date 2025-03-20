@@ -1,22 +1,26 @@
 {
-  "buildCommand": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && rustup default nightly && rustup target add wasm32-unknown-unknown && cargo install trunk && trunk build --release",
-  "outputDirectory": "dist",
+  "version": 2,
+  "buildCommand": "cd frontend && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && export PATH=$HOME/.cargo/bin:$PATH && rustup install 1.81.0 && rustup default 1.81.0 && rustup target add wasm32-unknown-unknown && cargo install trunk && trunk build --release",
+  "outputDirectory": "frontend/dist",
   "framework": null,
-  "installCommand": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && rustup default nightly && rustup target add wasm32-unknown-unknown",
+  "installCommand": "cd frontend && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && export PATH=$HOME/.cargo/bin:$PATH && rustup install 1.81.0 && rustup default 1.81.0 && rustup target add wasm32-unknown-unknown",
   "builds": [
     {
-      "src": "frontend/src/main.rs",
-      "use": "@vercel/rust"
+      "src": "frontend/build.sh",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "frontend/dist"
+      }
     }
   ],
   "routes": [
     {
       "src": "/assets/(.*)",
-      "dest": "/static/assets/$1"
+      "dest": "/assets/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/static/index.html"
+      "dest": "/index.html"
     }
   ]
 } 
