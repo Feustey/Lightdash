@@ -1,26 +1,53 @@
-name: Vercel Production Deployment
-
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
+name: Deploy to Vercel
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.PROJECT_ID }}
 
 jobs:
-  Deploy-Production:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - name: Install Rust
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81.0
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install trunk
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          export PATH="$HOME/.cargo/bin:$PATH"
+          cargo install --locked trunk
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          source "$H
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          trunk build --release
+          ls -la dist/
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        run: |
+          vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}

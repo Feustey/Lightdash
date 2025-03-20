@@ -3,7 +3,7 @@
   "buildCommand": "cd frontend && ./build.sh",
   "outputDirectory": "frontend/dist",
   "framework": null,
-  "installCommand": "cd frontend && ./build.sh install",
+  "installCommand": "cd frontend && ./build.sh",
   "builds": [
     {
       "src": "frontend/build.sh",
