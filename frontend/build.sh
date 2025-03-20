@@ -1,15 +1,21 @@
 #!/bin/bash
 
-# Installation des outils nécessaires
+# Install Rust and required tools
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source "$HOME/.cargo/env"
-rustup target add wasm32-unknown-unknown
-cargo install --locked trunk
-cargo install --locked wasm-bindgen-cli
+source $HOME/.cargo/env
 
-# Build du projet
+# Switch to nightly and add wasm target
+rustup default nightly
+rustup target add wasm32-unknown-unknown
+
+# Install trunk
+cargo install trunk
+
+# Build the project
 trunk build --release
 
-# Copie des fichiers dans le répertoire de sortie
-mkdir -p /vercel/output/static
-cp -r dist/* /vercel/output/static/ 
+# Create dist directory if it doesn't exist
+mkdir -p dist
+
+# Copy the built files to dist
+cp -r dist/* dist/ 
