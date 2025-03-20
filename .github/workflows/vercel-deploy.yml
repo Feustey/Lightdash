@@ -18,37 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust 1.81.0
+      - name: Install Rust
         run: |
-          rustup show
-          rustup install 1.81.0
-          rustup default 1.81.0
-          rustup override set 1.81.0
-          rustc --version
-
-      - name: Install Dependencies
-        run: |
-          cargo install --locked trunk
-          cargo install --locked wasm-bindgen-cli
-          cargo install --locked vercel-cli
-
-      - name: Add Cargo bin to PATH
-        run: |
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           export PATH="$HOME/.cargo/bin:$PATH"
-          which trunk
-
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build Project Artifacts
-        run: |
-          cd frontend
-          $HOME/.cargo/bin/trunk build --release
-
-      - name: Check output folder
-        run: ls -la frontend/dist
-
-      - name: Deploy Project Artifacts to Vercel
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: vercel deploy frontend/dist --prod --token=${{ secrets.VERCEL_TOKEN }}
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          source "$H
