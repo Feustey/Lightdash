@@ -7,7 +7,8 @@
       "config": {
         "buildCommand": "cd frontend && trunk build --release",
         "outputDirectory": "frontend/dist",
-        "rustcFlags": "--target wasm32-unknown-unknown"
+        "rustcFlags": "--target wasm32-unknown-unknown",
+        "installCommand": "cargo install --locked trunk wasm-bindgen-cli"
       }
     }
   ],
