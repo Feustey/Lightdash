@@ -2,6 +2,9 @@
 
 # Fonction d'installation
 install() {
+    # Uninstall existing Rust installation
+    rustup self uninstall -y
+
     # Install Rust and required tools
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     source $HOME/.cargo/env
@@ -11,6 +14,10 @@ install() {
     rustup install 1.81.0
     rustup default 1.81.0
     rustup target add wasm32-unknown-unknown
+
+    # Verify Rust version
+    echo "Verifying Rust version..."
+    rustc --version
 }
 
 # Fonction de build
@@ -21,7 +28,7 @@ build() {
     fi
 
     # Build the project
-    trunk build --release
+    $HOME/.cargo/bin/trunk build --release
 
     # Check the output directory
     echo "Checking build output directory..."
