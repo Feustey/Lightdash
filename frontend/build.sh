@@ -1,40 +1,49 @@
 #!/bin/bash
 
-set -e  # Arrêter le script en cas d'erreur
+set -e  # Stopper le script en cas d'erreur
 
-echo "🔧 Installation de Rust et Trunk..."
+echo "🔧 Correction du problème de HOME..."
 
-# Assurer que le répertoire Cargo existe
-export HOME="/vercel"
+# Définir HOME et PATH proprement
+export HOME=/vercel
+export USER=vercel
 export PATH="$HOME/.cargo/bin:$PATH"
 
-# Vérification du bon HOME (éviter les erreurs `$HOME differs from euid-obtained home directory`)
 echo "✅ HOME = $HOME"
+echo "✅ USER = $USER"
 echo "✅ PATH = $PATH"
 
-# Supprimer les anciennes installations pour éviter des conflits
-rm -rf $HOME/.cargo $HOME/.rustup
-
-# Installer Rust proprement
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.81.0
-export PATH="$HOME/.cargo/bin:$PATH"
-source "$HOME/.cargo/env"
-rustc --version  # Vérification
+# Vérifier si Rust est déjà installé
+if ! command -v rustc &> /dev/null; then
+    echo "🔧 Installation de Rust..."
+    rm -rf $HOME/.cargo $HOME/.rustup  # Supprimer d'anciennes versions
+    
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.81.0
+    source "$HOME/.cargo/env"
+    rustc --version  # Vérification
+fi
 
 # Installer cargo-binstall proprement
-curl -fsSL https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-export PATH="$HOME/.cargo/bin:$PATH"
+if ! command -v cargo-binstall &> /dev/null; then
+    echo "🔧 Installation de cargo-binstall..."
+    curl -fsSL https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+    export PATH="$HOME/.cargo/bin:$PATH"
+fi
 
-# Installer Trunk
-cargo binstall -y trunk
-which trunk
-trunk --version  # Vérification
+# Vérifier et installer Trunk
+if ! command -v trunk &> /dev/null; then
+    echo "🔧 Installation de Trunk..."
+    cargo binstall -y trunk
+    export PATH="$HOME/.cargo/bin:$PATH"
+    which trunk
+    trunk --version  # Vérification
+fi
 
 echo "✅ Rust et Trunk installés avec succès."
 
 # Construire le projet
 cd frontend
 trunk build --release
-ls -la dist  # Vérifier si le dossier "dist" est bien généré
+ls -la dist  # Vérifier si "dist" est bien généré
 
 echo "✅ Build terminé avec succès."
