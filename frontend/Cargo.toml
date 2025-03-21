@@ -1,23 +1,9 @@
 [package]
-name = "lightdash"
+name = "frontend"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-yew = { version = "0.20", features = ["csr"] }
-web-sys = { version = "0.3", features = ["HtmlInputElement"] }
 wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-reqwest = { version = "0.11", features = ["json"] }
-tokio = { version = "1.0", features = ["full"] }
-console_error_panic_hook = "0.1"
-gloo = "0.8"
-gloo-net = "0.2"
-js-sys = "0.3"
-futures = "0.3"
-chrono = { version = "0.4", features = ["serde"] }
-thousands = "0.2"
-wasm-logger = "0.2"
-log = "0.4"
+serde = { workspace = true }
+serde_json = { workspace = true }
