@@ -2,7 +2,4 @@
 target = "wasm32-unknown-unknown"
 
 [target.wasm32-unknown-unknown]
-rustflags = ["-C", "target-feature=+atomics,+bulk-memory,+mutable-globals"]
-
-[env]
-RUSTUP_TOOLCHAIN = "1.81.0" 
+rustflags = ["-C", "target-feature=+atomics,+bulk-memory,+mutable-globals"] 

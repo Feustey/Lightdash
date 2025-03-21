@@ -10,7 +10,7 @@ pub struct ActionsProps {
 
 #[function_component(Actions)]
 pub fn actions(props: &ActionsProps) -> Html {
-    let recommendations = use_state(|| Vec::<Recommendation>::new());
+    let recommendations = use_state(|| Vec::new());
     let loading = use_state(|| true);
     let error = use_state(|| None::<String>);
 
@@ -20,12 +20,17 @@ pub fn actions(props: &ActionsProps) -> Html {
         let error = error.clone();
         let api_service = props.api_service.clone();
 
-        use_effect_with_deps(
-            move |_| {
+        use_effect_with(
+            api_service,
+            move |api_service| {
+                let recommendations = recommendations.clone();
+                let loading = loading.clone();
+                let error = error.clone();
+
                 spawn_local(async move {
                     match api_service.get_recommendations().await {
                         Ok(recs) => {
-                            recommendations.set(recs);
+                            recommendations.set(Some(recs));
                             loading.set(false);
                         }
                         Err(e) => {
@@ -34,41 +39,33 @@ pub fn actions(props: &ActionsProps) -> Html {
                         }
                     }
                 });
+
                 || ()
             },
-            (),
         );
     }
 
     html! {
-        <div class="p-6 bg-white rounded-lg shadow-lg">
-            <h2 class="text-2xl font-bold mb-4">{"Actions Recommandées"}</h2>
-            
+        <div class={"actions"}>
             if *loading {
-                <div class="text-center py-8 text-gray-500">
-                    {"Chargement des recommandations..."}
-                </div>
-            } else if let Some(err) = (*error).as_ref() {
-                <div class="text-center py-8 text-red-500">
-                    {format!("Erreur: {}", err)}
-                </div>
+                <div class={"loading"}>{"Chargement des recommandations..."}</div>
+            } else if let Some(err) = &*error {
+                <div class={"error"}>{err}</div>
             } else if recommendations.is_empty() {
-                <div class="text-center py-8 text-gray-500">
-                    {"Aucune recommandation pour le moment."}
-                </div>
+                <div class={"empty"}>{"Aucune recommandation disponible."}</div>
             } else {
-                <div class="space-y-4">
-                    {for recommendations.iter().map(|rec| {
+                <div class={"recommendations"}>
+                    {for recommendations.iter().map(move |rec| {
                         let severity_class = match rec.severity {
-                            crate::models::ImpactSeverity::High => "bg-red-100 border-red-500",
-                            crate::models::ImpactSeverity::Medium => "bg-yellow-100 border-yellow-500",
-                            crate::models::ImpactSeverity::Low => "bg-green-100 border-green-500",
+                            crate::models::RecommendationSeverity::High => "high",
+                            crate::models::RecommendationSeverity::Medium => "medium",
+                            crate::models::RecommendationSeverity::Low => "low",
                         };
                         
                         html! {
-                            <div class={format!("p-4 border-l-4 rounded {}", severity_class)}>
-                                <h3 class="font-semibold">{&rec.title}</h3>
-                                <p class="text-gray-600 mt-1">{&rec.description}</p>
+                            <div class={format!("recommendation {}", severity_class)}>
+                                <h3>{&rec.title}</h3>
+                                <p>{&rec.description}</p>
                             </div>
                         }
                     })}

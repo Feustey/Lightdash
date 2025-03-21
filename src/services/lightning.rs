@@ -1,6 +1,7 @@
 use crate::models::lightning::{
     Channel, NodeInfo, Transaction,
-    ChannelStatus, TransactionType, TransactionStatus
+    ChannelStatus, TransactionType, TransactionStatus,
+    OutboundLiquidityValue
 };
 use anyhow::Result;
 use reqwest::Client;
@@ -8,7 +9,7 @@ use serde_json::{json, Value};
 use anyhow::Error;
 use tracing::{instrument, info, error};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct LightningService {
     client: Client,
     base_url: String,
@@ -144,5 +145,22 @@ impl LightningService {
             .json()
             .await?;
         Ok(response)
+    }
+
+    #[instrument(skip(self), err)]
+    pub async fn get_outbound_liquidity_value(&self) -> Result<OutboundLiquidityValue> {
+        info!("Récupération des valeurs de liquidité sortante");
+        let url = format!("{}/v1/liquidity/outbound", self.sparkseer_url);
+        match self.client.get(&url).send().await {
+            Ok(response) => {
+                let value = response.json::<OutboundLiquidityValue>().await?;
+                info!("Valeurs de liquidité sortante récupérées");
+                Ok(value)
+            }
+            Err(e) => {
+                error!(error = %e, "Erreur lors de la récupération des valeurs de liquidité sortante");
+                Err(e.into())
+            }
+        }
     }
 } 
