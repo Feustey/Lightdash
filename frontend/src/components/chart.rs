@@ -1,75 +1,125 @@
-use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, Chart, ChartConfiguration, ChartData, ChartOptions, ChartType, ChartDataset};
+use wasm_bindgen::prelude::*;
+use web_sys::{HtmlCanvasElement, CanvasRenderingContext2d, window};
 use yew::prelude::*;
-use web_sys::{CanvasRenderingContext2d};
-
-pub struct ChartComponent {
-    chart: Option<Chart>,
-    canvas_ref: NodeRef,
-}
+use js_sys::{Array, Object};
+use serde_json::json;
+use gloo_utils::format::JsValueSerdeExt;
 
 #[derive(Properties, PartialEq)]
 pub struct ChartProps {
     pub data: Vec<f64>,
     pub labels: Vec<String>,
     pub title: String,
-    pub chart_type: ChartType,
+    #[prop_or("line".to_string())]
+    pub chart_type: String,
+    #[prop_or("rgba(74, 144, 226, 0.2)".to_string())]
+    pub background_color: String,
+    #[prop_or("rgba(74, 144, 226, 1)".to_string())]
+    pub border_color: String,
 }
 
-impl Component for ChartComponent {
-    type Message = ();
-    type Properties = ChartProps;
+#[function_component(ChartComponent)]
+pub fn chart(props: &ChartProps) -> Html {
+    let canvas_ref = use_node_ref();
+    let data = props.data.clone();
+    let labels = props.labels.clone();
+    let title = props.title.clone();
+    let chart_type = props.chart_type.clone();
+    let background_color = props.background_color.clone();
+    let border_color = props.border_color.clone();
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self {
-            chart: None,
-            canvas_ref: NodeRef::default(),
-        }
-    }
+    {
+        let canvas_ref = canvas_ref.clone();
+        
+        use_effect_with(
+            (data.clone(), labels.clone(), title.clone(), chart_type.clone(), background_color.clone(), border_color.clone()),
+            move |(data, labels, title, chart_type, background_color, border_color)| {
+                let canvas = canvas_ref
+                    .cast::<HtmlCanvasElement>()
+                    .expect("Le canvas devrait exister");
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <div class="chart-container">
-                <canvas ref={self.canvas_ref.clone()}></canvas>
-            </div>
-        }
-    }
-
-    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
-        if first_render {
-            if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
-                let window = web_sys::window().unwrap();
-                let document = window.document().unwrap();
                 let context = canvas
                     .get_context("2d")
                     .unwrap()
                     .unwrap()
-                    .dyn_into::<web_sys::CanvasRenderingContext2d>()
+                    .dyn_into::<CanvasRenderingContext2d>()
                     .unwrap();
 
-                let data = ChartData::new();
-                let mut datasets = js_sys::Array::new();
-                let dataset = ChartDataset::new();
-                dataset.data(&ctx.props().data);
-                dataset.label(&ctx.props().title);
+                // Création des données pour le graphique
+                let data_array = Array::new();
+                for value in data {
+                    data_array.push(&JsValue::from_f64(*value));
+                }
+
+                let labels_array = Array::new();
+                for label in labels {
+                    labels_array.push(&JsValue::from_str(&label));
+                }
+
+                // Configuration du graphique
+                let config = Object::new();
+                js_sys::Reflect::set(&config, &JsValue::from_str("type"), &JsValue::from_str(&chart_type))
+                    .expect("La configuration du type devrait fonctionner");
+
+                let data_obj = Object::new();
+                js_sys::Reflect::set(&data_obj, &JsValue::from_str("labels"), &labels_array)
+                    .expect("La configuration des labels devrait fonctionner");
+
+                let dataset = Object::new();
+                js_sys::Reflect::set(&dataset, &JsValue::from_str("data"), &data_array)
+                    .expect("La configuration des données devrait fonctionner");
+                js_sys::Reflect::set(&dataset, &JsValue::from_str("label"), &JsValue::from_str(&title))
+                    .expect("La configuration du titre devrait fonctionner");
+                js_sys::Reflect::set(&dataset, &JsValue::from_str("backgroundColor"), &JsValue::from_str(&background_color))
+                    .expect("La configuration de la couleur de fond devrait fonctionner");
+                js_sys::Reflect::set(&dataset, &JsValue::from_str("borderColor"), &JsValue::from_str(&border_color))
+                    .expect("La configuration de la couleur de bordure devrait fonctionner");
+
+                let datasets = Array::new();
                 datasets.push(&dataset);
-                data.datasets(&datasets);
-                data.labels(&ctx.props().labels);
 
-                let options = ChartOptions::new();
-                options.responsive(true);
-                options.maintain_aspect_ratio(false);
+                js_sys::Reflect::set(&data_obj, &JsValue::from_str("datasets"), &datasets)
+                    .expect("La configuration des datasets devrait fonctionner");
 
-                let config = ChartConfiguration::new(
-                    ctx.props().chart_type,
-                    &data,
-                    Some(&options),
-                );
+                js_sys::Reflect::set(&config, &JsValue::from_str("data"), &data_obj)
+                    .expect("La configuration des données devrait fonctionner");
 
-                let chart = Chart::new(&canvas, &config);
-                self.chart = Some(chart);
-            }
-        }
+                // Options du graphique
+                let options = Object::new();
+                let scales = Object::new();
+                let y_axis = Object::new();
+                js_sys::Reflect::set(&y_axis, &JsValue::from_str("beginAtZero"), &JsValue::from_bool(true))
+                    .expect("La configuration de l'axe Y devrait fonctionner");
+                js_sys::Reflect::set(&scales, &JsValue::from_str("y"), &y_axis)
+                    .expect("La configuration des échelles devrait fonctionner");
+                js_sys::Reflect::set(&options, &JsValue::from_str("scales"), &scales)
+                    .expect("La configuration des options devrait fonctionner");
+
+                js_sys::Reflect::set(&config, &JsValue::from_str("options"), &options)
+                    .expect("La configuration des options devrait fonctionner");
+
+                // Création du graphique
+                let chart_js = window()
+                    .unwrap()
+                    .get("Chart")
+                    .expect("Chart.js devrait être disponible");
+
+                let chart_constructor = chart_js.dyn_ref::<js_sys::Function>().unwrap();
+                let _ = chart_constructor.call2(
+                    &JsValue::NULL,
+                    &canvas,
+                    &config,
+                ).expect("La création du graphique devrait fonctionner");
+
+                || ()
+            },
+        );
+    }
+
+    html! {
+        <div class="chart-container">
+            <canvas ref={canvas_ref}></canvas>
+        </div>
     }
 }
 
@@ -89,8 +139,9 @@ pub fn yield_chart(props: &YieldChartProps) -> Html {
 
     {
         let canvas_ref = canvas_ref.clone();
-        use_effect_with_deps(
-            move |_| {
+        use_effect_with(
+            (data.clone(), title.clone(), color.clone()),
+            move |(data, title, color)| {
                 if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
                     let context = canvas
                         .get_context("2d")
@@ -173,9 +224,9 @@ pub fn yield_chart(props: &YieldChartProps) -> Html {
                         context.fill();
                     }
                 }
-                || ()
+
+                move || ()
             },
-            (data, title, color),
         );
     }
 
