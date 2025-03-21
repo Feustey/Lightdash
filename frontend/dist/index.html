@@ -1,16 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
   <head>
-    <meta charset="utf-8" />
-    <title>Lightdash</title>
-    <link rel="stylesheet" href="/styles-a69016f6e727ca02.css" integrity="sha384-WichLK3/KxXYq1/WVsuKWNr00/W7YiX8D2hAjxIiciw2sORHHDBbqo9hNlPPzfyZ"/>
-  <link rel="modulepreload" href="/lightdash-frontend-c96f04a65f237f98.js" crossorigin="anonymous" integrity="sha384-oQEResIyaHBRWCF1B7ERmE2WcexUA3hfxEuvj7P0vDJi6e9dzn5XUGilkWtiFN3T"><link rel="preload" href="/lightdash-frontend-c96f04a65f237f98_bg.wasm" crossorigin="anonymous" integrity="sha384-Sf9ngD52Egjqas46/AfHqILG//xDhXoHbwWUO4BW8EyB8j6/FQJcNmwNnsO4/71w" as="fetch" type="application/wasm"></head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0b0d">
+    <meta name="description" content="Lightdash - La plateforme intelligente de gestion de nœud Lightning Network. Optimisez vos rendements et gérez vos canaux efficacement avec l'aide de l'IA.">
+    <meta name="keywords" content="lightning network, bitcoin, node management, crypto, blockchain, AI optimization">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://lightdash.app/">
+    <meta property="og:title" content="Lightdash - Gestion Intelligente de Nœud Lightning">
+    <meta property="og:description" content="Optimisez votre nœud Lightning Network avec l'aide de l'intelligence artificielle. Maximisez vos rendements et gérez vos canaux efficacement.">
+    <meta property="og:image" content="https://lightdash.app/images/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://lightdash.app/">
+    <meta name="twitter:title" content="Lightdash - Gestion Intelligente de Nœud Lightning">
+    <meta name="twitter:description" content="Optimisez votre nœud Lightning Network avec l'aide de l'intelligence artificielle. Maximisez vos rendements et gérez vos canaux efficacement.">
+    <meta name="twitter:image" content="https://lightdash.app/images/twitter-card.jpg">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://api.sparkseer.space">
+    <link rel="preconnect" href="https://relay.getalby.com">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://lightdash.app/">
+
+    <title>Lightdash - Gestion Intelligente de Nœud Lightning</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Lightdash",
+        "description": "Plateforme de gestion intelligente de nœud Lightning Network",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "BTC"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "Lightdash",
+            "url": "https://lightdash.app"
+        }
+    }
+    </script>
+
+    <style>
+        /* Styles de chargement initial */
+        .loading-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #0a0b0d;
+            color: #ffffff;
+        }
+    </style>
+    <link rel="stylesheet" href="/styles-c93f3f7fa3a37a09.css" integrity="sha384-Qt0J7O3R4uPW32JI3EupfrQRuEdlQo8/yzgkZl7F7czy756jGG5ZtpN381evsFLf"/>
+  <link rel="modulepreload" href="/frontend-e11dbfc8b4ff8ce9.js" crossorigin="anonymous" integrity="sha384-Yjw1pM3ez75xyE0D1FdNv/gx1ds5SxrVrjJKukhpuAOViqhi82ygQ2TaiY+kViA7"><link rel="preload" href="/frontend-e11dbfc8b4ff8ce9_bg.wasm" crossorigin="anonymous" integrity="sha384-278tsfeE2oItQES2+jM2+5+TFhbM69MF/jzJ4dSR4W5a8Pozo89Y85hj+Mp1Htxo" as="fetch" type="application/wasm"></head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+        <div class="loading-screen">
+            <h1>Chargement de Lightdash...</h1>
+        </div>
+    </div>
+    <noscript>
+        <div style="text-align: center; padding: 2rem;">
+            <h1>JavaScript est nécessaire</h1>
+            <p>Veuillez activer JavaScript pour utiliser Lightdash.</p>
+        </div>
+    </noscript>
   
 <script type="module">
-import init, * as bindings from '/lightdash-frontend-c96f04a65f237f98.js';
-const wasm = await init({ module_or_path: '/lightdash-frontend-c96f04a65f237f98_bg.wasm' });
+import init, * as bindings from '/frontend-e11dbfc8b4ff8ce9.js';
+const wasm = await init({ module_or_path: '/frontend-e11dbfc8b4ff8ce9_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -18,134 +97,5 @@ window.wasmBindings = bindings;
 
 dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 
-</script><script>"use strict";
-
-(function () {
-
-    const address = '{{__TRUNK_ADDRESS__}}';
-    const base = '{{__TRUNK_WS_BASE__}}';
-    let protocol = '';
-    protocol =
-        protocol
-            ? protocol
-            : window.location.protocol === 'https:'
-                ? 'wss'
-                : 'ws';
-    const url = protocol + '://' + address + base + '.well-known/trunk/ws';
-
-    class Overlay {
-        constructor() {
-            // create an overlay
-            this._overlay = document.createElement("div");
-            const style = this._overlay.style;
-            style.height = "100vh";
-            style.width = "100vw";
-            style.position = "fixed";
-            style.top = "0";
-            style.left = "0";
-            style.backgroundColor = "rgba(222, 222, 222, 0.5)";
-            style.fontFamily = "sans-serif";
-            // not sure that's the right approach
-            style.zIndex = "1000000";
-            style.backdropFilter = "blur(1rem)";
-
-            const container = document.createElement("div");
-            // center it
-            container.style.position = "absolute";
-            container.style.top = "30%";
-            container.style.left = "15%";
-            container.style.maxWidth = "85%";
-
-            this._title = document.createElement("div");
-            this._title.innerText = "Build failure";
-            this._title.style.paddingBottom = "2rem";
-            this._title.style.fontSize = "2.5rem";
-
-            this._message = document.createElement("div");
-            this._message.style.whiteSpace = "pre-wrap";
-
-            const icon= document.createElement("div");
-            icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#dc3545" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>';
-            this._title.prepend(icon);
-
-            container.append(this._title, this._message);
-            this._overlay.append(container);
-
-            this._inject();
-            window.setInterval(() => {
-                this._inject();
-            }, 250);
-        }
-
-        set reason(reason) {
-            this._message.textContent = reason;
-        }
-
-        _inject() {
-            if (!this._overlay.isConnected) {
-                // prepend it
-                document.body?.prepend(this._overlay);
-            }
-        }
-
-    }
-
-    class Client {
-        constructor(url) {
-            this.url = url;
-            this.poll_interval = 5000;
-            this._overlay = null;
-        }
-
-        start() {
-            const ws = new WebSocket(this.url);
-            ws.onmessage = (ev) => {
-                const msg = JSON.parse(ev.data);
-                switch (msg.type) {
-                    case "reload":
-                        this.reload();
-                        break;
-                    case "buildFailure":
-                        this.buildFailure(msg.data)
-                        break;
-                }
-            };
-            ws.onclose = () => this.onclose();
-        }
-
-        onclose() {
-            window.setTimeout(
-                () => {
-                    // when we successfully reconnect, we'll force a
-                    // reload (since we presumably lost connection to
-                    // trunk due to it being killed, so it will have
-                    // rebuilt on restart)
-                    const ws = new WebSocket(this.url);
-                    ws.onopen = () => window.location.reload();
-                    ws.onclose = () => this.onclose();
-                },
-                this.poll_interval);
-        }
-
-        reload() {
-            window.location.reload();
-        }
-
-        buildFailure({reason}) {
-            // also log the console
-            console.error("Build failed:", reason);
-
-            console.debug("Overlay", this._overlay);
-
-            if (!this._overlay) {
-                this._overlay = new Overlay();
-            }
-            this._overlay.reason = reason;
-        }
-    }
-
-    new Client(url).start();
-
-})()
 </script></body>
 </html> 

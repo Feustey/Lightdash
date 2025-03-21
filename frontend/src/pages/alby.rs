@@ -1,9 +1,15 @@
 use yew::prelude::*;
+use yew::html;
+use crate::components::{Navbar, Card, Button};
 
-#[function_component(AlbyPage)]
-pub fn alby_page() -> Html {
+#[derive(Properties, PartialEq)]
+pub struct AlbyPageProps {}
+
+#[function_component(AlbyPageComponent)]
+pub fn alby() -> Html {
     html! {
         <div class="alby-container">
+            <Navbar current_page={"alby".to_string()} />
             <h1 class="alby-title">{"Alby Hub : Un Guide pour Configurer un Nœud Lightning avec Facilité"}</h1>
             
             <div class="alby-intro">

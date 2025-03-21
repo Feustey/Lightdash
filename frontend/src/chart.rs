@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, window, Document};
-use serde_json::json;
-use serde_wasm_bindgen::to_value;
+use serde_json::{json, to_value};
+use gloo_utils::format::JsValueSerdeExt;
 
 #[wasm_bindgen]
 extern "C" {
@@ -63,7 +63,7 @@ pub fn create_chart(canvas_id: &str, data: Vec<f64>, labels: Vec<String>, title:
         }
     });
 
-    let config = to_value(&config).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let config = config.to_js_value().map_err(|e| JsValue::from_str(&e.to_string()))?;
     Ok(Chart::new(&ctx, &config))
 }
 

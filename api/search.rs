@@ -2,7 +2,7 @@ use lambda_http::{run, service_fn, Body, Error, Request, Response, RequestExt};
 use serde::{Deserialize, Serialize};
 use reqwest::Client;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 struct NodeInfo {
     pubkey: String,
     alias: String,

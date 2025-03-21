@@ -3,8 +3,9 @@ use gloo_net::http::Request;
 use wasm_bindgen::JsValue;
 use std::time::Instant;
 use crate::{log_api_call, log_api_response, log_error, log_performance};
+use web_sys::window;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeInfo {
     pub pubkey: String,
     pub alias: String,
@@ -108,4 +109,9 @@ pub fn get_current_node() -> String {
             DEFAULT_NODE.to_string()
         }
     }
+}
+
+pub fn get_host() -> Option<String> {
+    let host = window()?.location().host().ok()?;
+    Some(host)
 } 
