@@ -1,37 +1,16 @@
-use lambda_http::{run, service_fn, Body, Error, Request, Response};
-use lambda_runtime::Context;
-use serde_json::json;
-use tera::Tera;
+use vercel_runtime::{run, Body, Error, Request, Response, StatusCode};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    run(service_fn(func)).await
+    run(handler).await
 }
 
-async fn func(event: Request, _: Context) -> Result<Response<Body>, Error> {
-    // Initialisation de Tera
-    let tera = match Tera::new("templates/**/*") {
-        Ok(t) => t,
-        Err(e) => {
-            return Ok(Response::builder()
-                .status(500)
-                .header("content-type", "text/plain")
-                .body(Body::from(format!("Erreur template: {}", e)))
-                .expect("failed to render error"));
-        }
-    };
+pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
+    let response = Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "application/json")
+        .body(Body::from("{\"status\": \"ok\"}"))
+        .map_err(|_| Error::from("Failed to build response"))?;
 
-    // Rendu du template
-    match tera.render("index.html", &tera::Context::new()) {
-        Ok(html) => Ok(Response::builder()
-            .status(200)
-            .header("content-type", "text/html")
-            .body(Body::from(html))
-            .expect("failed to render template")),
-        Err(e) => Ok(Response::builder()
-            .status(500)
-            .header("content-type", "text/plain")
-            .body(Body::from(format!("Erreur: {}", e)))
-            .expect("failed to render error"))
-    }
+    Ok(response)
 } 

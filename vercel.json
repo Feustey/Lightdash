@@ -1,26 +1,19 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && ./build.sh",
+  "buildCommand": "./install.sh && cd frontend && trunk build --release",
   "outputDirectory": "frontend/dist",
-  "framework": null,
-  "installCommand": "cd frontend && ./build.sh",
-  "builds": [
-    {
-      "src": "frontend/build.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "frontend/dist"
-      }
-    }
-  ],
   "routes": [
     {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/*.rs": {
+      "runtime": "@vercel/rust@4.0.0"
+    }
+  }
 } 

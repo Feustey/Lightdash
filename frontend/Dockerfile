@@ -15,17 +15,8 @@ RUN rustup target add wasm32-unknown-unknown
 
 WORKDIR /app
 
-# Copie du Cargo.toml du workspace root
-COPY ../Cargo.toml /app/Cargo.toml
-
-# Copie du Cargo.toml du frontend
-COPY Cargo.toml /app/frontend/Cargo.toml
-
-# Création du dossier frontend
-RUN mkdir -p /app/frontend
-
-# Copie des fichiers du projet frontend
-COPY . /app/frontend/
+# Copie des fichiers du projet
+COPY . /app/
 
 # Compilation de l'application
 RUN cd frontend && trunk build --release

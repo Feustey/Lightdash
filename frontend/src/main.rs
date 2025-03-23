@@ -1,33 +1,36 @@
-use yew::prelude::*;
-use yew_router::prelude::*;
-use pages::{DashboardPage, ChannelsPage, ActionsPage, RecommendationsPage, YieldsPage};
-
-mod pages;
+mod routes;
+use routes::AppRoute;
 mod components;
+mod pages;
 mod services;
 mod types;
+mod chart;
+mod config;
+
+use components::{Navbar, Card, Button, Chart};
+use pages::*;
+use yew::prelude::*;
+use yew_router::prelude::*;
+use wasm_logger;
+
+use crate::Route;
+use crate::switch;
 
 #[derive(Clone, Routable, PartialEq)]
 enum Route {
     #[at("/")]
-    Dashboard,
-    #[at("/channels")]
-    Channels,
-    #[at("/yields")]
-    Yields,
-    #[at("/recommendations")]
-    Recommendations,
+    Home,
     #[at("/actions")]
     Actions,
+    #[at("/alby")]
+    Alby,
 }
 
 fn switch(routes: Route) -> Html {
     match routes {
-        Route::Dashboard => html! { <DashboardPage /> },
-        Route::Channels => html! { <ChannelsPage /> },
-        Route::Yields => html! { <YieldsPage /> },
-        Route::Recommendations => html! { <RecommendationsPage /> },
-        Route::Actions => html! { <ActionsPage /> },
+        Route::Home => html! { <Dashboard /> },
+        Route::Actions => html! { <Actions /> },
+        Route::Alby => html! { <Alby /> },
     }
 }
 
@@ -35,11 +38,17 @@ fn switch(routes: Route) -> Html {
 fn app() -> Html {
     html! {
         <BrowserRouter>
-            <Switch<Route> render={switch} />
+            <div class="min-h-screen bg-gray-900">
+                <Navbar />
+                <main class="container mx-auto px-4 py-8">
+                    <Switch<Route> render={switch} />
+                </main>
+            </div>
         </BrowserRouter>
     }
 }
 
 fn main() {
+    wasm_logger::init(wasm_logger::Config::default());
     yew::Renderer::<App>::new().render();
 } 

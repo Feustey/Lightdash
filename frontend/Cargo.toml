@@ -1,60 +1,41 @@
 [package]
-name = "lightdash-frontend"
+name = "frontend"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-yew = { version = "0.20", features = ["csr"] }
-yew-router = "0.17"
 wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde-wasm-bindgen = "0.6"
+yew = { version = "0.21", features = ["csr"] }
+yew-router = "0.18"
 web-sys = { version = "0.3", features = [
     "Document",
     "Element",
     "HtmlElement",
+    "Node",
     "Window",
-    "CanvasRenderingContext2d",
     "HtmlCanvasElement",
-    "Chart",
-    "ChartConfiguration",
-    "ChartData",
-    "ChartOptions",
-    "ChartType",
-    "ChartDataset",
-    "ChartPlugins",
-    "ChartScales",
-    "ChartTitle",
-    "ChartLegend",
-    "ChartTooltip",
-    "ChartAnimation",
-    "ChartLayout",
-    "ChartInteraction",
-    "ChartResponsive",
-    "ChartMaintainAspectRatio",
-    "ChartElements",
-    "ChartElementsOptions",
-    "ChartElementsLine",
-    "ChartElementsPoint",
-    "ChartElementsBar",
-    "ChartElementsArc",
-    "ChartElementsRectangle",
-    "ChartElementsText",
-    "ChartElementsImage",
-    "ChartElementsLineOptions",
-    "ChartElementsPointOptions",
-    "ChartElementsBarOptions",
-    "ChartElementsArcOptions",
-    "ChartElementsRectangleOptions",
-    "ChartElementsTextOptions",
-    "ChartElementsImageOptions",
-    "ChartScalesOptions",
-    "ChartScalesLinearOptions",
-    "ChartScalesLogarithmicOptions",
-    "ChartScalesCategoryOptions",
-    "ChartScalesTimeOptions",
-    "ChartScalesRadialOptions"
-]}
-gloo = "0.8"
-gloo-net = "0.2"
-serde = { workspace = true }
-serde_json = { workspace = true }
+    "CanvasRenderingContext2d",
+    "Performance",
+    "PerformanceTiming",
+    "Storage",
+    "console"
+] }
+js-sys = "0.3"
+wasm-bindgen-futures = "0.4"
+gloo-net = "0.5"
+gloo-timers = { version = "0.3", features = ["futures"] }
+gloo-utils = "0.2"
+gloo-storage = "0.3"
+log = "0.4"
+wasm-logger = "0.2"
+chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3"
+lazy_static = "1.4"
+uuid = { version = "1.3", features = ["v4", "serde", "js"] }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+uuid = { version = "1.16", features = ["js"] }

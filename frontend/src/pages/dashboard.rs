@@ -1,128 +1,134 @@
-use crate::components::chart::ChartComponent;
-use web_sys::ChartType;
-use crate::services::sparkseer::SparkSeerService;
-use crate::types::NodeStats;
 use yew::prelude::*;
-use wasm_bindgen_futures::spawn_local;
+use crate::components::{Card, Chart};
+use crate::types::NodeStats;
+use crate::services::sparkseer::SparkseerService;
 
-pub struct Dashboard {
-    node_stats: NodeStats,
-    loading: bool,
-    error: Option<String>,
-}
+#[function_component(DashboardPage)]
+pub fn dashboard() -> Html {
+    let stats = use_state(|| None::<NodeStats>);
+    let loading = use_state(|| true);
+    let error = use_state(|| None::<String>);
 
-impl Component for Dashboard {
-    type Message = ();
-    type Properties = ();
+    {
+        let stats = stats.clone();
+        let loading = loading.clone();
+        let error = error.clone();
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        let node_stats = NodeStats {
-            pubkey: String::new(),
-            alias: String::new(),
-            capacity: 0.0,
-            total_channels: 0,
-            fee_rates: vec![],
-            routing_fees: vec![],
-            routing_volume: vec![],
-            last_update: String::new(),
-            uptime: 0.0,
-            avg_fee_rate: 0.0,
-            total_routing_fees: 0.0,
-            total_routing_volume: 0.0,
-        };
-
-        let service = SparkSeerService::new();
-        let node_pubkey = "YOUR_NODE_PUBKEY".to_string(); // À remplacer par la vraie clé publique
-
-        spawn_local(async move {
-            if let Ok(stats) = service.get_node_stats(&node_pubkey).await {
-                // Mettre à jour les stats
-            }
+        use_effect_with((), move |_| {
+            let sparkseer = SparkseerService::new();
+            wasm_bindgen_futures::spawn_local(async move {
+                match sparkseer.get_node_stats().await {
+                    Ok(data) => {
+                        stats.set(Some(data));
+                        loading.set(false);
+                    }
+                    Err(e) => {
+                        error.set(Some(e.to_string()));
+                        loading.set(false);
+                    }
+                }
+            });
         });
-
-        Self {
-            node_stats,
-            loading: true,
-            error: None,
-        }
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <div class="dashboard">
-                <h1>{"Tableau de bord"}</h1>
-                
-                if self.loading {
-                    <div class="loading">{"Chargement..."}</div>
-                } else if let Some(error) = &self.error {
-                    <div class="error">{error}</div>
-                } else {
-                    <div class="node-info">
-                        <h2>{&self.node_stats.alias}</h2>
-                        <p>{"Clé publique: "}{&self.node_stats.pubkey}</p>
-                        <p>{"Dernière mise à jour: "}{&self.node_stats.last_update}</p>
-                        <p>{"Uptime: "}{format!("{:.2}%", self.node_stats.uptime)}</p>
+    // Données pour les graphiques
+    let balance_data = stats.as_ref().map(|s| vec![
+        s.local_balance as f64,
+        s.remote_balance as f64,
+    ]).unwrap_or_default();
+    let balance_labels = vec!["Balance locale".to_string(), "Balance distante".to_string()];
+
+    let channel_data = stats.as_ref().map(|s| vec![
+        s.num_channels as f64,
+        s.avg_channel_size as f64,
+    ]).unwrap_or_default();
+    let channel_labels = vec!["Nombre de canaux".to_string(), "Taille moyenne".to_string()];
+
+    let uptime_data = stats.as_ref().map(|s| vec![s.uptime_percentage]).unwrap_or_default();
+    let uptime_labels = vec!["Uptime".to_string()];
+
+    html! {
+        <div class="min-h-screen bg-dark">
+            <main class="container mx-auto px-4 py-8">
+                if *loading {
+                    <div class="flex justify-center items-center h-64">
+                        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                    </div>
+                } else if let Some(error) = &*error {
+                    <div class="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded relative" role="alert">
+                        <strong class="font-bold">{"Erreur !"}</strong>
+                        <span class="block sm:inline">{" "}{error}</span>
+                    </div>
+                } else if let Some(stats) = &*stats {
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        <Card title="Balance locale">
+                            <div class="text-2xl font-bold text-primary">
+                                {format!("{:.8} BTC", stats.local_balance as f64 / 100_000_000.0)}
+                            </div>
+                        </Card>
+                        <Card title="Balance distante">
+                            <div class="text-2xl font-bold text-primary">
+                                {format!("{:.8} BTC", stats.remote_balance as f64 / 100_000_000.0)}
+                            </div>
+                        </Card>
+                        <Card title="Capacité totale">
+                            <div class="text-2xl font-bold text-primary">
+                                {format!("{:.8} BTC", stats.total_capacity as f64 / 100_000_000.0)}
+                            </div>
+                        </Card>
                     </div>
 
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <h3>{"Capacité totale"}</h3>
-                            <p>{format!("{:.2} BTC", self.node_stats.capacity)}</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3>{"Canaux actifs"}</h3>
-                            <p>{self.node_stats.total_channels}</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3>{"Frais de routage totaux"}</h3>
-                            <p>{format!("{:.2} sats", self.node_stats.total_routing_fees)}</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3>{"Volume de routage"}</h3>
-                            <p>{format!("{:.2} BTC", self.node_stats.total_routing_volume)}</p>
-                        </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <Chart
+                            title="Distribution des balances"
+                            data={balance_data}
+                            labels={balance_labels}
+                            chart_type={ChartType::Pie}
+                        />
+                        <Chart
+                            title="Statistiques des canaux"
+                            data={channel_data}
+                            labels={channel_labels}
+                            chart_type={ChartType::Bar}
+                        />
                     </div>
 
-                    <div class="charts-container">
-                        <div class="chart-wrapper">
-                            <h3>{"Capacité et Canaux"}</h3>
-                            <ChartComponent
-                                data={vec![self.node_stats.capacity, self.node_stats.total_channels as f64]}
-                                labels={vec!["Capacité (BTC)".to_string(), "Canaux".to_string()]}
-                                title="Statistiques du nœud".to_string()
-                                chart_type={ChartType::Bar}
-                            />
-                        </div>
-                        <div class="chart-wrapper">
-                            <h3>{"Frais de routage"}</h3>
-                            <ChartComponent
-                                data={self.node_stats.routing_fees.clone()}
-                                labels={self.node_stats.routing_fees.iter().enumerate().map(|(i, _)| format!("Jour {}", i + 1)).collect()}
-                                title="Frais de routage quotidiens".to_string()
-                                chart_type={ChartType::Line}
-                            />
-                        </div>
-                        <div class="chart-wrapper">
-                            <h3>{"Volume de routage"}</h3>
-                            <ChartComponent
-                                data={self.node_stats.routing_volume.clone()}
-                                labels={self.node_stats.routing_volume.iter().enumerate().map(|(i, _)| format!("Jour {}", i + 1)).collect()}
-                                title="Volume de routage quotidien".to_string()
-                                chart_type={ChartType::Line}
-                            />
-                        </div>
-                        <div class="chart-wrapper">
-                            <h3>{"Taux de frais"}</h3>
-                            <ChartComponent
-                                data={self.node_stats.fee_rates.clone()}
-                                labels={self.node_stats.fee_rates.iter().enumerate().map(|(i, _)| format!("Jour {}", i + 1)).collect()}
-                                title="Taux de frais quotidiens".to_string()
-                                chart_type={ChartType::Line}
-                            />
-                        </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Chart
+                            title="Uptime du nœud"
+                            data={uptime_data}
+                            labels={uptime_labels}
+                            chart_type={ChartType::Doughnut}
+                        />
+                        <Card title="Informations du nœud">
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="text-sm text-gray-400">{"Clé publique"}</div>
+                                    <div class="text-white font-mono">{&stats.pubkey}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400">{"Alias"}</div>
+                                    <div class="text-white">{&stats.alias}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400">{"Nombre de canaux"}</div>
+                                    <div class="text-white">{stats.num_channels}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400">{"Taille moyenne des canaux"}</div>
+                                    <div class="text-white">
+                                        {format!("{:.8} BTC", stats.avg_channel_size as f64 / 100_000_000.0)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400">{"Uptime"}</div>
+                                    <div class="text-white">{format!("{:.1}%", stats.uptime_percentage)}</div>
+                                </div>
+                            </div>
+                        </Card>
                     </div>
                 }
-            </div>
-        }
+            </main>
+        </div>
     }
 } 
