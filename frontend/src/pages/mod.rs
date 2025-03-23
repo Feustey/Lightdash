@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use crate::types::Page;
 
-mod dashboard;
+pub mod dashboard;
 mod actions;
 mod alby;
 pub mod home;
