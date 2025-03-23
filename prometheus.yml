@@ -12,7 +12,11 @@ rule_files:
   - "alert_rules.yml"
 
 scrape_configs:
-  - job_name: 'lightdash'
+  - job_name: 'frontend'
     static_configs:
-      - targets: ['localhost:3000']
-    metrics_path: '/metrics' 
+      - targets: ['frontend:80']
+    metrics_path: '/metrics'
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090'] 

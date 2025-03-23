@@ -1,228 +1,165 @@
 use yew::prelude::*;
 use yew::html;
 use web_sys::MouseEvent;
+use yew_router::prelude::*;
+use web_sys::HtmlInputElement;
+use wasm_bindgen::JsCast;
+use crate::types::Route;
 
-mod navbar;
 mod card;
+mod navbar;
 mod button;
 mod chart;
+mod search_input;
 
-#[derive(Properties, PartialEq, Clone)]
-pub struct NavbarProps {
-    pub current_page: String,
-}
+pub use card::Card;
+pub use navbar::Navbar;
+pub use button::{Button, ButtonVariant};
+pub use chart::Chart;
+pub use search_input::SearchInput;
 
-pub struct NavbarComponent {
-    props: NavbarProps,
-}
-
-impl Component for NavbarComponent {
-    type Message = ();
-    type Properties = NavbarProps;
-
-    fn create(ctx: &Context<Self>) -> Self {
-        Self {
-            props: ctx.props().clone(),
-        }
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
-        false
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let is_mobile_menu_open = use_state(|| false).clone();
-
-        let toggle_mobile_menu = {
-            let is_mobile_menu_open = is_mobile_menu_open.clone();
-            Callback::from(move |_| {
-                is_mobile_menu_open.set(!*is_mobile_menu_open.borrow());
-            })
-        };
-
-        html! {
-            <nav class="navbar">
-                <div class="navbar-brand">
-                    <a href="/" class="navbar-item">
-                        <span class="icon-text">
-                            <span class="icon">
-                                <i class="mdi mdi-lightning-bolt"></i>
-                            </span>
-                            <span>{"Lightdash"}</span>
-                        </span>
-                    </a>
-                    <button class="navbar-burger" onclick={toggle_mobile_menu}>
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </button>
-                </div>
-                <div class={classes!("navbar-menu", if *is_mobile_menu_open.borrow() { "is-active" } else { "" })}>
-                    <div class="navbar-start">
-                        <a href="/" class={classes!("navbar-item", if self.props.current_page == "dashboard" { "is-active" } else { "" })}>
-                            <span class="icon-text">
-                                <span class="icon">
-                                    <i class="mdi mdi-view-dashboard"></i>
-                                </span>
-                                <span>{"Tableau de bord"}</span>
-                            </span>
-                        </a>
-                        <a href="/channels" class={classes!("navbar-item", if self.props.current_page == "channels" { "is-active" } else { "" })}>
-                            <span class="icon-text">
-                                <span class="icon">
-                                    <i class="mdi mdi-connection"></i>
-                                </span>
-                                <span>{"Canaux"}</span>
-                            </span>
-                        </a>
-                        <a href="/actions" class={classes!("navbar-item", if self.props.current_page == "actions" { "is-active" } else { "" })}>
-                            <span class="icon-text">
-                                <span class="icon">
-                                    <i class="mdi mdi-play-circle"></i>
-                                </span>
-                                <span>{"Actions"}</span>
-                            </span>
-                        </a>
-                        <a href="/recommendations" class={classes!("navbar-item", if self.props.current_page == "recommendations" { "is-active" } else { "" })}>
-                            <span class="icon-text">
-                                <span class="icon">
-                                    <i class="mdi mdi-lightbulb"></i>
-                                </span>
-                                <span>{"Recommandations"}</span>
-                            </span>
-                        </a>
-                        <a href="/yields" class={classes!("navbar-item", if self.props.current_page == "yields" { "is-active" } else { "" })}>
-                            <span class="icon-text">
-                                <span class="icon">
-                                    <i class="mdi mdi-chart-line"></i>
-                                </span>
-                                <span>{"Rendements"}</span>
-                            </span>
-                        </a>
-                        <a href="/alby" class={classes!("navbar-item", if self.props.current_page == "alby" { "is-active" } else { "" })}>
-                            <span class="icon-text">
-                                <span class="icon">
-                                    <i class="mdi mdi-wallet"></i>
-                                </span>
-                                <span>{"Alby"}</span>
-                            </span>
-                        </a>
-                    </div>
-                </div>
-            </nav>
-        }
-    }
-}
-
-#[derive(Properties, PartialEq, Clone)]
+#[derive(Properties, PartialEq)]
 pub struct CardProps {
     pub title: String,
-    pub children: Children,
-    pub class: Option<String>,
+    pub options: Option<serde_json::Value>,    pub options: Option<serde_json::Value>,    pub options: Option<serde_json::Value>,    pub options: Option<serde_json::Value>,    pub children: Children,
 }
 
-pub struct CardComponent {
-    props: CardProps,
+#[function_component(Card)]
+pub fn card(props: &CardProps) -> Html {
+    html! {
+        <div class="bg-dark-light border border-dark-lighter rounded-lg shadow-lg p-6">
+            {props.children.clone()}
+        </div>
+    }
 }
 
-impl Component for CardComponent {
-    type Message = ();
-    type Properties = CardProps;
+#[derive(Properties, Clone, PartialEq)]
+pub struct NavbarProps {
+    pub current_page: AppRoute,    pub current_page: AppRoute,    pub current_route: Route,
+}
 
-    fn create(ctx: &Context<Self>) -> Self {
-        Self {
-            props: ctx.props().clone(),
-        }
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
-        false
-    }
-
-    fn view(&self, _ctx: &Context<Self>) -> Html {
-        let class = self.props.class.clone().unwrap_or_default();
-        html! {
-            <div class={format!("card {}", class)}>
-                <div class="card-header">
-                    <h2 class="card-title">{&self.props.title}</h2>
-                </div>
-                <div class="card-content">
-                    {for self.props.children.iter()}
+#[function_component(Navbar)]
+pub fn navbar() -> Html {
+    html! {
+        <nav class="bg-dark-light border-b border-dark-lighter">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <img src="/logo.svg" alt="Lightdash" class="h-8 w-8 mr-2" />
+                        <span class="text-xl font-bold text-primary">{"Lightdash"}</span>
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <Link::<Route> to={Route::Home} classes="text-gray-300 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                            {"Dashboard"}
+                        </Link<Route>>
+                        <Link::<Route> to={Route::Actions} classes="text-gray-300 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                            {"Actions"}
+                        </Link<Route>>
+                        <Link::<Route> to={Route::Alby} classes="text-gray-300 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                            {"Alby"}
+                        </Link<Route>>
+                    </div>
                 </div>
             </div>
-        }
+        </nav>
     }
 }
 
-#[derive(Properties, PartialEq, Clone)]
+#[derive(Properties, PartialEq)]
 pub struct ButtonProps {
     pub onclick: Callback<MouseEvent>,
     pub children: Children,
+    #[prop_or_default]
+    pub variant: ButtonVariant,
 }
 
-pub struct ButtonComponent {
-    props: ButtonProps,
+impl Default for ButtonVariant {
+    fn default() -> Self {
+        Self::Primary
+    }
 }
 
-impl Component for ButtonComponent {
-    type Message = ();
-    type Properties = ButtonProps;
+#[function_component(Button)]
+pub fn button(props: &ButtonProps) -> Html {
+    let classes = match props.variant {
+        ButtonVariant::Primary => "bg-primary text-dark hover:bg-primary/90",
+        ButtonVariant::Secondary => "bg-secondary text-dark hover:bg-secondary/90",
+        ButtonVariant::Danger => "bg-red-600 text-white hover:bg-red-700",
+    };
 
-    fn create(ctx: &Context<Self>) -> Self {
-        Self {
-            props: ctx.props().clone(),
-        }
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
-        false
-    }
-
-    fn view(&self, _ctx: &Context<Self>) -> Html {
-        html! {
-            <button class="button" onclick={self.props.onclick.clone()}>
-                {self.props.children.clone()}
-            </button>
-        }
+    html! {
+        <button
+            onclick={props.onclick.clone()}
+            class={format!("px-4 py-2 rounded-lg font-medium transition-colors duration-200 {}", classes)}
+        >
+            {props.children.clone()}
+        </button>
     }
 }
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct ChartProps {
     pub title: String,
-    pub data: Vec<f64>,
+    pub options: Option<serde_json::Value>,    pub options: Option<serde_json::Value>,    pub options: Option<serde_json::Value>,    pub options: Option<serde_json::Value>,    pub data: Vec<f64>,
     pub labels: Vec<String>,
 }
 
-pub struct ChartComponent {
-    props: ChartProps,
-}
-
-impl Component for ChartComponent {
-    type Message = ();
-    type Properties = ChartProps;
-
-    fn create(ctx: &Context<Self>) -> Self {
-        Self {
-            props: ctx.props().clone(),
-        }
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
-        false
-    }
-
-    fn view(&self, _ctx: &Context<Self>) -> Html {
-        html! {
-            <div class="chart">
-                <h3>{&self.props.title}</h3>
-                <canvas id="chart"></canvas>
-            </div>
-        }
+#[function_component(Chart)]
+pub fn chart(props: &ChartProps) -> Html {
+    html! {
+        <div class="chart">
+            <h3>{&props.title}</h3>
+            <canvas id="chart"></canvas>
+        </div>
     }
 }
 
-pub type Navbar = NavbarComponent;
-pub type Card = CardComponent;
-pub type Button = ButtonComponent;
-pub type Chart = ChartComponent; 
+#[derive(Properties, PartialEq)]
+pub struct SearchInputProps {
+    pub value: String,    pub value: String,    pub on_search: Callback<String>,
+    pub placeholder: String,
+}
+
+#[function_component(SearchInput)]
+pub fn search_input(props: &SearchInputProps) -> Html {
+    let onkeypress = {
+        let on_search = props.on_search.clone();
+        Callback::from(move |e: KeyboardEvent| {
+            if e.key() == "Enter" {
+                let input: HtmlInputElement = e.target_unchecked_into();
+                on_search.emit(input.value());
+            }
+        })
+    };
+
+    let onclick = {
+        let on_search = props.on_search.clone();
+        Callback::from(move |_| {
+            let input: HtmlInputElement = web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .get_element_by_id("search-input")
+                .unwrap()
+                .dyn_into()
+                .unwrap();
+            on_search.emit(input.value());
+        })
+    };
+
+    html! {
+        <div class="flex space-x-2">
+            <input
+                id="search-input"
+                type="text"
+                placeholder={props.placeholder.clone()}
+                class="flex-1 bg-dark-lighter border border-dark-lighter rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                onkeypress={onkeypress}
+            />
+            <Button onclick={onclick} variant={ButtonVariant::Primary}>
+                {"Rechercher"}
+            </Button>
+        </div>
+    }
+} 

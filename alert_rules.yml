@@ -1,15 +1,15 @@
 groups:
-  - name: lightdash_alerts
+  - name: lightdash
     rules:
       # Alerte sur le nombre d'erreurs
       - alert: HighErrorRate
-        expr: rate(lightning_errors_total[5m]) > 0.1
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.1
         for: 5m
         labels:
-          severity: warning
+          severity: critical
         annotations:
-          summary: "Taux d'erreur élevé"
-          description: "Le taux d'erreur est supérieur à 0.1 erreurs par seconde depuis 5 minutes"
+          summary: "High error rate detected"
+          description: "Error rate is above 10% for the last 5 minutes"
 
       # Alerte sur la capacité des canaux
       - alert: LowChannelCapacity
@@ -38,15 +38,15 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Latence élevée"
-          description: "95% des requêtes prennent plus d'une seconde"
+          summary: "High latency detected"
+          description: "95th percentile latency is above 1 second"
 
       # Alerte sur la disponibilité du service
       - alert: ServiceDown
-        expr: up{job="lightdash"} == 0
+        expr: up == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "Service indisponible"
-          description: "Le service Lightdash est indisponible" 
+          summary: "Service is down"
+          description: "Service {{ $labels.instance }} is down" 

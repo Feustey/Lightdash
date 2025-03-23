@@ -1,90 +1,105 @@
+use crate::routes::AppRoute;
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::Route;
+use crate::types::Route;
 
-#[derive(Properties, PartialEq, Clone)]
+#[derive(Properties, PartialEq)]
 pub struct NavbarProps {
     pub current_page: String,
 }
 
 #[function_component(Navbar)]
 pub fn navbar(props: &NavbarProps) -> Html {
-    let is_mobile_menu_open = use_state(|| false);
-
-    let toggle_mobile_menu = {
-        let is_mobile_menu_open = is_mobile_menu_open.clone();
-        Callback::from(move |_| {
-            is_mobile_menu_open.set(!*is_mobile_menu_open);
-        })
-    };
-
     html! {
-        <nav class="navbar">
-            <div class="navbar-brand">
-                <a href="/" class="navbar-item">
-                    <span class="icon-text">
-                        <span class="icon">
-                            <i class="mdi mdi-lightning-bolt"></i>
-                        </span>
-                        <span>{"Lightdash"}</span>
-                    </span>
-                </a>
-                <button class="navbar-burger" onclick={toggle_mobile_menu}>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-            </div>
-            <div class={classes!("navbar-menu", if *is_mobile_menu_open { "is-active" } else { "" })}>
-                <div class="navbar-start">
-                    <a href="/" class={classes!("navbar-item", if props.current_page == "dashboard" { "is-active" } else { "" })}>
-                        <span class="icon-text">
-                            <span class="icon">
-                                <i class="mdi mdi-view-dashboard"></i>
-                            </span>
-                            <span>{"Tableau de bord"}</span>
-                        </span>
-                    </a>
-                    <a href="/channels" class={classes!("navbar-item", if props.current_page == "channels" { "is-active" } else { "" })}>
-                        <span class="icon-text">
-                            <span class="icon">
-                                <i class="mdi mdi-connection"></i>
-                            </span>
-                            <span>{"Canaux"}</span>
-                        </span>
-                    </a>
-                    <a href="/actions" class={classes!("navbar-item", if props.current_page == "actions" { "is-active" } else { "" })}>
-                        <span class="icon-text">
-                            <span class="icon">
-                                <i class="mdi mdi-play-circle"></i>
-                            </span>
-                            <span>{"Actions"}</span>
-                        </span>
-                    </a>
-                    <a href="/recommendations" class={classes!("navbar-item", if props.current_page == "recommendations" { "is-active" } else { "" })}>
-                        <span class="icon-text">
-                            <span class="icon">
-                                <i class="mdi mdi-star"></i>
-                            </span>
-                            <span>{"Recommandations"}</span>
-                        </span>
-                    </a>
-                    <a href="/yields" class={classes!("navbar-item", if props.current_page == "yields" { "is-active" } else { "" })}>
-                        <span class="icon-text">
-                            <span class="icon">
-                                <i class="mdi mdi-chart-line"></i>
-                            </span>
-                            <span>{"Rendements"}</span>
-                        </span>
-                    </a>
-                    <a href="/alby" class={classes!("navbar-item", if props.current_page == "alby" { "is-active" } else { "" })}>
-                        <span class="icon-text">
-                            <span class="icon">
-                                <i class="mdi mdi-wallet"></i>
-                            </span>
-                            <span>{"Alby"}</span>
-                        </span>
-                    </a>
+        <nav class="bg-dark-lighter border-b border-dark-lighter">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="flex-shrink-0 flex items-center">
+                            <img src="/assets/logo.svg" alt="Lightdash" class="h-8 w-8" />
+                            <span class="ml-2 text-xl font-bold text-primary">{"Lightdash"}</span>
+                        </div>
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <Link<AppRoute> 
+                                to={Route::Home}
+                                classes={classes!(
+                                    "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium",
+                                    if props.current_page == "home" {
+                                        "border-primary text-white"
+                                    } else {
+                                        "border-transparent text-gray-300 hover:border-gray-300 hover:text-white"
+                                    }
+                                )}
+                            >
+                                {"Accueil"}
+                            </Link<AppRoute>>
+                            <Link<AppRoute>
+                                to={Route::Actions}
+                                classes={classes!(
+                                    "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium",
+                                    if props.current_page == "actions" {
+                                        "border-primary text-white"
+                                    } else {
+                                        "border-transparent text-gray-300 hover:border-gray-300 hover:text-white"
+                                    }
+                                )}
+                            >
+                                {"Actions"}
+                            </Link<AppRoute>>
+                            <Link<AppRoute>
+                                to={Route::Alby}
+                                classes={classes!(
+                                    "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium",
+                                    if props.current_page == "alby" {
+                                        "border-primary text-white"
+                                    } else {
+                                        "border-transparent text-gray-300 hover:border-gray-300 hover:text-white"
+                                    }
+                                )}
+                            >
+                                {"Alby"}
+                            </Link<AppRoute>>
+                            <Link<AppRoute>
+                                to={Route::Recommendations}
+                                classes={classes!(
+                                    "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium",
+                                    if props.current_page == "recommendations" {
+                                        "border-primary text-white"
+                                    } else {
+                                        "border-transparent text-gray-300 hover:border-gray-300 hover:text-white"
+                                    }
+                                )}
+                            >
+                                {"Recommandations"}
+                            </Link<AppRoute>>
+                            <Link<AppRoute>
+                                to={Route::Channels}
+                                classes={classes!(
+                                    "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium",
+                                    if props.current_page == "channels" {
+                                        "border-primary text-white"
+                                    } else {
+                                        "border-transparent text-gray-300 hover:border-gray-300 hover:text-white"
+                                    }
+                                )}
+                            >
+                                {"Canaux"}
+                            </Link<AppRoute>>
+                            <Link<AppRoute>
+                                to={Route::About}
+                                classes={classes!(
+                                    "inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium",
+                                    if props.current_page == "about" {
+                                        "border-primary text-white"
+                                    } else {
+                                        "border-transparent text-gray-300 hover:border-gray-300 hover:text-white"
+                                    }
+                                )}
+                            >
+                                {"À propos"}
+                            </Link<AppRoute>>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>

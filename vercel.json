@@ -1,22 +1,19 @@
 {
   "version": 2,
+  "buildCommand": "./install.sh && cd frontend && trunk build --release",
+  "outputDirectory": "frontend/dist",
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
   "functions": {
     "api/*.rs": {
-      "runtime": "vercel-rust@4.0.0"
+      "runtime": "@vercel/rust@4.0.0"
     }
-  },
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/frontend/index.html" }
-  ],
-  "buildCommand": "chmod +x build.sh && ./build.sh",
-  "outputDirectory": "frontend/dist",
-  "framework": "react-router",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  }
 } 

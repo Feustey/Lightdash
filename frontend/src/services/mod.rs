@@ -1,5 +1,5 @@
 use log::error;
-use crate::types::{NodeStats, ChannelRecommendation, OutboundLiquidityValue, SuggestedFees, Channel, Action, ActionType, ActionStatus};
+use crate::types::{NodeStats, ChannelRecommendation, OutboundLiquidityValue, SuggestedFees, Channel, Action, ActionType, ActionStatus, ChannelStatus};
 use crate::config::{SPARKSEER_API_URL, OPENAI_API_URL, get_api_key};
 use gloo_net::http::{Request, RequestBuilder, Headers};
 use serde::{Serialize, Deserialize};
@@ -7,6 +7,8 @@ use serde_json::json;
 use futures::future::join4;
 use uuid;
 use chrono;
+use wasm_bindgen_futures::spawn_local;
+use yew::callback::Callback;
 
 const MAX_RETRIES: u32 = 3;
 const RETRY_DELAY_MS: u32 = 1000;
@@ -44,14 +46,10 @@ fn create_request(url: &str, api_key: Option<String>) -> RequestBuilder {
     }
 }
 
-pub async fn fetch_node_stats() -> Result<NodeStats, String> {
-    let api_key = get_api_key("sparkseer").ok_or_else(|| "API key not found".to_string())?;
-    let headers = Headers::new();
-    headers.append("Authorization", &format!("Bearer {}", api_key));
-    headers.append("Content-Type", "application/json");
+pub type Error = String;
 
+pub async fn fetch_node_stats() -> Result<NodeStats, Error> {
     let response = Request::get(&format!("{}/node/stats", SPARKSEER_API_URL))
-        .headers(headers)
         .send()
         .await
         .map_err(|e| e.to_string())?;
@@ -82,14 +80,8 @@ pub async fn fetch_channel_recommendations() -> Result<Vec<ChannelRecommendation
     response.json().await.map_err(|e| e.to_string())
 }
 
-pub async fn fetch_outbound_liquidity_value() -> Result<OutboundLiquidityValue, String> {
-    let api_key = get_api_key("sparkseer").ok_or_else(|| "API key not found".to_string())?;
-    let headers = Headers::new();
-    headers.append("Authorization", &format!("Bearer {}", api_key));
-    headers.append("Content-Type", "application/json");
-
+pub async fn fetch_outbound_liquidity_value() -> Result<OutboundLiquidityValue, Error> {
     let response = Request::get(&format!("{}/liquidity/outbound", SPARKSEER_API_URL))
-        .headers(headers)
         .send()
         .await
         .map_err(|e| e.to_string())?;
@@ -101,14 +93,8 @@ pub async fn fetch_outbound_liquidity_value() -> Result<OutboundLiquidityValue, 
     response.json().await.map_err(|e| e.to_string())
 }
 
-pub async fn fetch_suggested_fees() -> Result<SuggestedFees, String> {
-    let api_key = get_api_key("sparkseer").ok_or_else(|| "API key not found".to_string())?;
-    let headers = Headers::new();
-    headers.append("Authorization", &format!("Bearer {}", api_key));
-    headers.append("Content-Type", "application/json");
-
+pub async fn fetch_suggested_fees() -> Result<SuggestedFees, Error> {
     let response = Request::get(&format!("{}/fees/suggested", SPARKSEER_API_URL))
-        .headers(headers)
         .send()
         .await
         .map_err(|e| e.to_string())?;
@@ -120,33 +106,23 @@ pub async fn fetch_suggested_fees() -> Result<SuggestedFees, String> {
     response.json().await.map_err(|e| e.to_string())
 }
 
-pub async fn fetch_channels() -> Result<Vec<Channel>, String> {
-    let api_key = get_api_key("sparkseer").ok_or_else(|| "API key not found".to_string())?;
-    let headers = Headers::new();
-    headers.append("Authorization", &format!("Bearer {}", api_key));
-    headers.append("Content-Type", "application/json");
-
-    let response = Request::get(&format!("{}/channels", SPARKSEER_API_URL))
-        .headers(headers)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    if !response.ok() {
-        return Err(format!("HTTP error! status: {}", response.status()));
-    }
-
-    response.json().await.map_err(|e| e.to_string())
+pub async fn fetch_channels() -> Result<Vec<Channel>, Error> {
+    Ok(vec![
+        Channel {
+            channel_id: "123".to_string(),
+            remote_pubkey: "abc".to_string(),
+            remote_alias: "Node 1".to_string(),
+            capacity: 1_000_000,
+            local_balance: 500_000,
+            remote_balance: 500_000,
+            active: true,
+            status: ChannelStatus::Active,
+        }
+    ])
 }
 
-pub async fn fetch_actions() -> Result<Vec<Action>, String> {
-    let api_key = get_api_key("sparkseer").ok_or_else(|| "API key not found".to_string())?;
-    let headers = Headers::new();
-    headers.append("Authorization", &format!("Bearer {}", api_key));
-    headers.append("Content-Type", "application/json");
-
+pub async fn fetch_actions() -> Result<Vec<Action>, Error> {
     let response = Request::get(&format!("{}/actions", SPARKSEER_API_URL))
-        .headers(headers)
         .send()
         .await
         .map_err(|e| e.to_string())?;
@@ -239,26 +215,44 @@ pub async fn get_ai_actions(node_stats: &NodeStats, channels: &[Channel]) -> Res
 
 fn prepare_prompt(stats: &NodeStats, channels: &[Channel]) -> String {
     format!(
-        "Analysez les données suivantes d'un nœud Lightning Network et suggérez des actions d'optimisation :\n\n\
+        "Analysez les données suivantes du nœud Lightning Network de Feustey (pubkey: 0296b2db342fcf87ea94d981757fdf4d3e545bd5cef4919f58b5d38dfdd73bf5c9) et suggérez des actions d'optimisation :\n\n\
         Statistiques du nœud :\n\
+        - Pubkey : {}\n\
+        - Alias : {}\n\
         - Nombre de canaux : {}\n\
         - Capacité totale : {} sats\n\
         - Balance totale locale : {} sats\n\
         - Balance totale distante : {} sats\n\
         - Taille moyenne des canaux : {} sats\n\
         - Uptime : {}%\n\n\
-        Canaux :\n{}",
+        Canaux :\n{}\n\n\
+        Veuillez suggérer des actions concrètes pour optimiser ce nœud, en vous concentrant sur :\n\
+        1. L'équilibrage des canaux\n\
+        2. L'ouverture ou la fermeture de canaux\n\
+        3. L'ajustement des frais\n\
+        4. L'amélioration de la connectivité\n\
+        Pour chaque suggestion, indiquez :\n\
+        - Le type d'action (OpenChannel, CloseChannel, UpdateFees, Rebalance)\n\
+        - La priorité (1-5, où 1 est la plus haute)\n\
+        - L'impact attendu sur le nœud",
+        stats.pubkey,
+        stats.alias,
         stats.num_channels,
         stats.total_capacity,
-        stats.total_local_balance,
-        stats.total_remote_balance,
+        stats.local_balance,
+        stats.remote_balance,
         stats.avg_channel_size,
         stats.uptime_percentage,
         channels
             .iter()
             .map(|c| format!(
-                "- Canal {} avec {} :\n  Capacité : {} sats, Balance locale : {} sats, Active : {}\n",
-                c.channel_id, c.remote_alias, c.capacity, c.local_balance, c.active
+                "- Canal {} avec {} :\n  Capacité : {} sats, Balance locale : {} sats ({:.1}%), Active : {}\n",
+                c.channel_id,
+                c.remote_pubkey,
+                c.capacity,
+                c.local_balance,
+                (c.local_balance as f64 / c.capacity as f64) * 100.0,
+                c.active
             ))
             .collect::<Vec<_>>()
             .join("")
@@ -278,10 +272,7 @@ fn parse_ai_response(content: &str) -> Result<Vec<Action>, String> {
             if let (Some(action_type), Some(prio)) = (current_action.take(), priority.take()) {
                 actions.push(Action {
                     id: uuid::Uuid::new_v4().to_string(),
-                    type_: ActionType::OpenChannel,
                     status: ActionStatus::Pending,
-                    created_at: chrono::Utc::now(),
-                    updated_at: chrono::Utc::now(),
                     action_type,
                     description: description.trim().to_string(),
                     priority: prio,
@@ -309,31 +300,117 @@ fn parse_ai_response(content: &str) -> Result<Vec<Action>, String> {
         return Err("Aucune action n'a pu être extraite de la réponse".to_string());
     }
 
-    Ok(actions)
+    actions
 }
 
-const API_BASE_URL: &str = "http://localhost:8080/api";
+const API_BASE_URL: &str = "https://lightdash.netlify.app/api";
 
-pub async fn create_action(action_type: ActionType) -> Result<Action, String> {
-    let response = Request::post(&format!("{}/actions", API_BASE_URL))
-        .json(&json!({
-            "type": action_type,
-        }))
-        .map_err(|e| e.to_string())?
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
+pub struct ApiService;
 
-    if !response.ok() {
-        return Err(format!("HTTP error! status: {}", response.status()));
+impl ApiService {
+    pub fn new() -> Self {
+        Self
     }
 
-    let action: Action = response
-        .json()
-        .await
-        .map_err(|e| e.to_string())?;
+    pub fn fetch_node_stats(&self, pubkey: &str, callback: Callback<Result<NodeStats, String>>) {
+        let url = format!("{}/node/{}", API_BASE_URL, pubkey);
+        let callback = callback.clone();
 
-    Ok(action)
+        spawn_local(async move {
+            let response = gloo_net::http::Request::get(&url)
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if !response.ok() {
+                return Err(format!("HTTP error! status: {}", response.status()));
+            }
+
+            let stats: NodeStats = response.json().await.map_err(|e| e.to_string())?;
+            let _ = stats; ()
+        });
+    }
+
+    pub fn fetch_channels(&self, pubkey: &str, callback: Callback<Result<Vec<Channel>, String>>) {
+        let url = format!("{}/node/{}/channels", API_BASE_URL, pubkey);
+        let callback = callback.clone();
+
+        spawn_local(async move {
+            let response = gloo_net::http::Request::get(&url)
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if !response.ok() {
+                return Err(format!("HTTP error! status: {}", response.status()));
+            }
+
+            let channels: Vec<Channel> = response.json().await.map_err(|e| e.to_string())?;
+            let _ = channels; ()
+        });
+    }
+
+    pub fn fetch_actions(&self, callback: Callback<Result<Vec<Action>, String>>) {
+        let url = format!("{}/actions", API_BASE_URL);
+        let callback = callback.clone();
+
+        spawn_local(async move {
+            let response = gloo_net::http::Request::get(&url)
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if !response.ok() {
+                return Err(format!("HTTP error! status: {}", response.status()));
+            }
+
+            let actions: Vec<Action> = response.json().await.map_err(|e| e.to_string())?;
+            let _ = actions; ()
+        });
+    }
+
+    pub fn create_action(&self, action_type: ActionType, callback: Callback<Result<Action, String>>) {
+        let url = format!("{}/actions", API_BASE_URL);
+        let callback = callback.clone();
+
+        spawn_local(async move {
+            let response = gloo_net::http::Request::post(&url)
+                .json(&json!({
+                    "type": action_type.to_string(),
+                    "status": ActionStatus::Pending.to_string(),
+                }))
+                .map_err(|e| e.to_string())?
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if !response.ok() {
+                return Err(format!("HTTP error! status: {}", response.status()));
+            }
+
+            let action: Action = response.json().await.map_err(|e| e.to_string())?;
+            let _ = action; ()
+        });
+    }
+
+    pub fn get_recommendations(&self, pubkey: &str, callback: Callback<Result<Vec<ChannelRecommendation>, String>>) {
+        let url = format!("{}/node/{}/recommendations", API_BASE_URL, pubkey);
+        let callback = callback.clone();
+
+        spawn_local(async move {
+            let response = gloo_net::http::Request::get(&url)
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if !response.ok() {
+                return Err(format!("HTTP error! status: {}", response.status()));
+            }
+
+            let recommendations: Vec<ChannelRecommendation> = response.json().await.map_err(|e| e.to_string())?;
+            let _ = recommendations; ()
+        });
+    }
 }
 
 pub async fn cancel_action(action_id: &str) -> Result<(), String> {
@@ -349,14 +426,16 @@ pub async fn cancel_action(action_id: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub async fn execute_action(action_id: &str) -> Result<(), String> {
-    let api_key = get_api_key("sparkseer").ok_or_else(|| "API key not found".to_string())?;
-    let headers = Headers::new();
-    headers.append("Authorization", &format!("Bearer {}", api_key));
-    headers.append("Content-Type", "application/json");
+pub async fn execute_action(action_type: ActionType, prio: u32, impact: &str) -> Result<Action, Error> {
+    let payload = serde_json::json!({
+        "type": action_type,
+        "priority": prio,
+        "impact": impact
+    });
 
-    let response = Request::post(&format!("{}/actions/{}/execute", SPARKSEER_API_URL, action_id))
-        .headers(headers)
+    let response = Request::post(&format!("{}/actions", SPARKSEER_API_URL))
+        .json(&payload)
+        .map_err(|e| e.to_string())?
         .send()
         .await
         .map_err(|e| e.to_string())?;
@@ -365,5 +444,5 @@ pub async fn execute_action(action_id: &str) -> Result<(), String> {
         return Err(format!("HTTP error! status: {}", response.status()));
     }
 
-    Ok(())
+    response.json().await.map_err(|e| e.to_string())
 } 

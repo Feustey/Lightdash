@@ -1,3 +1,5 @@
+mod routes;
+use routes::AppRoute;
 mod components;
 mod pages;
 mod services;
@@ -17,31 +19,18 @@ use crate::switch;
 #[derive(Clone, Routable, PartialEq)]
 enum Route {
     #[at("/")]
-    Dashboard,
-    #[at("/channels")]
-    Channels,
+    Home,
     #[at("/actions")]
     Actions,
-    #[at("/recommendations")]
-    Recommendations,
-    #[at("/yields")]
-    Yields,
     #[at("/alby")]
     Alby,
-    #[not_found]
-    #[at("/404")]
-    NotFound,
 }
 
-fn switch(route: Route) -> Html {
-    match route {
-        Route::Dashboard => html! { <DashboardPage /> },
-        Route::Channels => html! { <ChannelsPage /> },
-        Route::Actions => html! { <ActionsPage /> },
-        Route::Recommendations => html! { <RecommendationsPage /> },
-        Route::Yields => html! { <YieldsPage /> },
-        Route::Alby => html! { <AlbyPage /> },
-        Route::NotFound => html! { <h1>{"404 - Page non trouvée"}</h1> },
+fn switch(routes: Route) -> Html {
+    match routes {
+        Route::Home => html! { <Dashboard /> },
+        Route::Actions => html! { <Actions /> },
+        Route::Alby => html! { <Alby /> },
     }
 }
 
@@ -49,9 +38,9 @@ fn switch(route: Route) -> Html {
 fn app() -> Html {
     html! {
         <BrowserRouter>
-            <div class="app">
-                <Navbar current_page="dashboard".to_string() />
-                <main class="main">
+            <div class="min-h-screen bg-gray-900">
+                <Navbar />
+                <main class="container mx-auto px-4 py-8">
                     <Switch<Route> render={switch} />
                 </main>
             </div>

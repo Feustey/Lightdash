@@ -1,3 +1,5 @@
+use crate::routes::AppRoute;
+use crate::routes::AppRoute;
 // Définition des modules
 mod components;
 mod pages;
@@ -7,39 +9,28 @@ mod config;
 
 use yew::prelude::*;
 use yew_router::prelude::*;
+use crate::pages::{DashboardPageComponent, ActionsPageComponent, AlbyPageComponent};
+use crate::types::Route;
 
-#[derive(Clone, Routable, PartialEq)]
-pub enum Route {
-    #[at("/")]
-    Dashboard,
-    #[at("/channels")]
-    Channels,
-    #[at("/actions")]
-    Actions,
-    #[at("/recommendations")]
-    Recommendations,
-    #[at("/yields")]
-    Yields,
-    #[at("/alby")]
-    Alby,
-    #[not_found]
-    #[at("/404")]
-    NotFound,
+#[function_component(App)]
+pub fn app() -> Html {
+    html! {
+        <BrowserRouter>
+            <Switch<AppRoute> render={switch} />
+        </BrowserRouter>
+    }
 }
 
-pub fn switch(route: Route) -> Html {
+fn switch(route: Route) -> Html {
     match route {
-        Route::Dashboard => html! { <pages::DashboardPage /> },
-        Route::Channels => html! { <pages::ChannelsPage /> },
-        Route::Actions => html! { <pages::ActionsPage /> },
-        Route::Recommendations => html! { <pages::RecommendationsPage /> },
-        Route::Yields => html! { <pages::YieldsPage /> },
-        Route::Alby => html! { <pages::AlbyPage /> },
-        Route::NotFound => html! { <h1>{"404 - Page non trouvée"}</h1> },
+        Route::Home => html! { <DashboardPageComponent /> },
+        Route::Actions => html! { <ActionsPageComponent /> },
+        Route::Alby => html! { <AlbyPageComponent /> },
+        Route::Home => html! { <h1>{"404 - Page non trouvée"}</h1> },
     }
 }
 
 // Fonction d'initialisation
 pub fn init() {
-    // Code d'initialisation ici
+    wasm_logger::init(wasm_logger::Config::default());
 } 
